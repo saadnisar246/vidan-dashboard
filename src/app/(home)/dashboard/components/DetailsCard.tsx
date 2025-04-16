@@ -46,22 +46,22 @@ export function DetailCard({
           <p className="text-xl font-bold text-primary">{price}</p>
         </div>
       </CardHeader> */}
-      <CardContent className="p-6 pt-0">
+      <CardContent className="p-4 pt-0">
         <div className="grid gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Worker name: {"John Doe"}</span>
+            <span><b>Worker name:</b> {"John Doe"}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Desk no: {"5"}</span>
+            <span><b>Desk no:</b> {"5"}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Sitting Duration: {"80.56"}</span>
+            <span><b>Sitting Duration:</b> {"80.56"}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Login time: {"12:00 PM"}</span>
+            <span><b>Login time:</b> {"12:00 PM"}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Logout time: {"01:00 PM"}</span>
+            <span><b>Logout time:</b> {"01:00 PM"}</span>
           </div>
         </div>
       </CardContent>

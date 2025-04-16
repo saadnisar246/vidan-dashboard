@@ -1,3 +1,5 @@
+"use client";
+
 import {
   LayoutDashboard,
   ChartLine,
@@ -18,15 +20,19 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 
+import { usePathname } from "next/navigation";
+
 export default function AppSidebar() {
+  const pathname = usePathname();
+
   return (
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="py-10">
+          <SidebarGroupLabel className="py-12">
             <Link href={"/dashboard"}>
               <Image
-                src="/images/vidan_ai_logo-removebg-preview.png"
+                src="/images/vidan-logo-header.png"
                 alt="Vidan AI Logo"
                 width={500}
                 height={500}
@@ -35,30 +41,33 @@ export default function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent className="mt-5">
             <SidebarMenu>
+              {/* Dashboard */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive className="py-5">
-                  <Link href={"#"}>
-                    <div className="flex items-center space-x-2">
+                <SidebarMenuButton asChild isActive={pathname === "/dashboard"} className="py-5">
+                  <Link href={"/dashboard"} >
+                    <div className={`flex items-center space-x-2 ${pathname === "/dashboard" ? "text-blue-600" : "text-black"}`}>
                       <LayoutDashboard className="w-5 h-5" />
                       <span className="text-xl">Dashboard</span>
                     </div>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {/* Analytics */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="py-5">
-                  <Link href={"#"}>
-                    <div className="flex items-center space-x-2">
+                <SidebarMenuButton asChild isActive={pathname === "/analytics"} className="py-5">
+                  <Link href={"/analytics"}>
+                    <div className={`flex items-center space-x-2 ${pathname === "/analytics" ? "text-blue-600" : "text-black"}`}>
                       <ChartLine className="w-5 h-5" />
                       <span className="text-xl">Analytics</span>
                     </div>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {/* Logout */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="py-5">
-                  <Link href="#">
-                    <div className="flex items-center space-x-2">
+                <SidebarMenuButton asChild isActive={pathname === "/logout"} className="py-5">
+                  <Link href="/logout">
+                    <div className={`flex items-center space-x-2 ${pathname === "/logout" ? "text-blue-600" : "text-black"}`}>
                       <LogOut className="w-5 h-5" />
                       <span className="text-xl">Logout</span>
                     </div>
