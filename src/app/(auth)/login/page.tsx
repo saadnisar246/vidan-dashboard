@@ -1,20 +1,34 @@
 "use client";
 
-import type { Route } from "next";
-import Link from "next/link";
-
-// import { EmailSignIn } from "./email-signin";
-// import { OAuthSignIn } from "./oauth-signin";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-
-import { LoaderCircle } from "lucide-react";
-
-export const runtime = "edge";
 
 export default function AuthenticationPage() {
+  const router = useRouter();
+
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    // Dummy credentials check
+    if (email === "user@email.com" && password === "password123") {
+      router.push("/dashboard");
+    } else {
+      setError("Invalid email or password");
+    }
+
+    setIsLoading(false);
+  };
 
   return (
     <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
@@ -25,11 +39,7 @@ export default function AuthenticationPage() {
         </p>
       </div>
       <div className="grid gap-6">
-        {/* <EmailSignIn /> */}
-        <form
-          className="grid gap-2"
-          // onSubmit={signInWithLink}
-        >
+        <form className="grid gap-2" onSubmit={handleSubmit}>
           <div className="grid gap-1">
             <label htmlFor="email" className="pl-1">
               Email <span className="text-red-500">*</span>
@@ -43,62 +53,48 @@ export default function AuthenticationPage() {
               autoComplete="email"
               autoCorrect="off"
               className="bg-background"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
-          <div className="grid gap-1">
+
+          <div className="grid gap-1 relative">
             <label htmlFor="password" className="pl-1">
               Password <span className="text-red-500">*</span>
             </label>
             <Input
               id="password"
               name="password"
-              placeholder=""
-              type="password"
+              placeholder="••••••••"
+              type={showPassword ? "text" : "password"}
               autoCapitalize="none"
-              // autoComplete="email"
               autoCorrect="off"
-              className="bg-background"
+              className="bg-background pr-10"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-9 text-muted-foreground"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
-          <Button disabled={isLoading}>
+
+          {error && <p className="text-sm text-red-500 pl-1">{error}</p>}
+
+          <Button type="submit" disabled={isLoading} className="cursor-pointer">
             {isLoading && (
               <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
             )}
             Submit
           </Button>
         </form>
-
-        {/* <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-        </div> */}
-
-        {/* <OAuthSignIn /> */}
       </div>
-
-      {/* <p className="px-8 text-center text-sm text-muted-foreground">
-        By clicking continue, you agree to our{" "}
-        <Link
-          href={"/terms" as Route}
-          className="underline underline-offset-4 hover:text-primary"
-        >
-          Terms of Service
-        </Link>{" "}
-        and{" "}
-        <Link
-          href={"/privacy" as Route}
-          className="underline underline-offset-4 hover:text-primary"
-        >
-          Privacy Policy
-        </Link>
-        .
-      </p> */}
     </div>
   );
 }

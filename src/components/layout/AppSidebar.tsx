@@ -66,7 +66,7 @@ export default function AppSidebar() {
               {/* Logout */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/logout"} className="py-5">
-                  <Link href="/logout">
+                  <Link href="/login">
                     <div className={`flex items-center space-x-2 ${pathname === "/logout" ? "text-blue-600" : "text-black"}`}>
                       <LogOut className="w-5 h-5" />
                       <span className="text-xl">Logout</span>
