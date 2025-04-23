@@ -45,7 +45,7 @@ export default function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/dashboard"} className="py-5">
                   <Link href={"/dashboard"} >
-                    <div className={`flex items-center space-x-2 ${pathname === "/dashboard" ? "text-blue-600" : "text-black"}`}>
+                    <div className={`flex items-center space-x-2 ${pathname === "/dashboard" ? "text-blue-500" : "text-black"}`}>
                       <LayoutDashboard className="w-5 h-5" />
                       <span className="text-xl">Dashboard</span>
                     </div>
@@ -56,7 +56,7 @@ export default function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/analytics"} className="py-5">
                   <Link href={"/analytics"}>
-                    <div className={`flex items-center space-x-2 ${pathname === "/analytics" ? "text-blue-600" : "text-black"}`}>
+                    <div className={`flex items-center space-x-2 ${pathname === "/analytics" ? "text-blue-500" : "text-black"}`}>
                       <ChartLine className="w-5 h-5" />
                       <span className="text-xl">Analytics</span>
                     </div>
@@ -67,7 +67,7 @@ export default function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/logout"} className="py-5">
                   <Link href="/login">
-                    <div className={`flex items-center space-x-2 ${pathname === "/logout" ? "text-blue-600" : "text-black"}`}>
+                    <div className={`flex items-center space-x-2 ${pathname === "/logout" ? "text-blue-500" : "text-black"}`}>
                       <LogOut className="w-5 h-5" />
                       <span className="text-xl">Logout</span>
                     </div>

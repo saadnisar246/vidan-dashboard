@@ -39,6 +39,11 @@ const PieChartWithTable: React.FC<PieChartWithTableProps> = ({ data }) => {
             "#F59E0B",
             "#EF4444",
             "#8B5CF6",
+            "#8E3C86",
+            "#F2E444",
+            "#7B32FA",
+            "#1AB817",
+            "#A5EE3C",
           ];
           return colors[idx % colors.length];
         }),

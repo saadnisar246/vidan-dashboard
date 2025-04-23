@@ -8,35 +8,33 @@ import { Separator } from "@/components/ui/separator"
 
 interface DetailCardProps {
   image: string
+  detection: string,
+  result: string,
   title: string
-  price: string
   location: string
   date: string
-  category: string
-  owner: string
-  actionLabel?: string
+  time: string
   onAction?: () => void
 }
 
 export function DetailCard({
   image,
+  detection,
+  result,
   title,
-  price,
   location,
   date,
-  category,
-  owner,
-  actionLabel,
+  time,
 //   onAction,
 }: DetailCardProps) {
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
-      <div className="relative aspect-video w-full overflow-hidden">
+      <div className="relative aspect-square w-full overflow-hidden">
         <Image
           src={image || "/placeholder.svg"}
           alt={title}
           fill
-          className="object-cover transition-transform duration-300 hover:scale-105"
+          className="object-top object-cover transition-transform duration-300 hover:scale-105 cursor-pointer"
           priority
         />
       </div>
@@ -48,20 +46,23 @@ export function DetailCard({
       </CardHeader> */}
       <CardContent className="p-4 pt-0">
         <div className="grid gap-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span><b>Worker name:</b> {"John Doe"}</span>
+          <div className="flex items-center gap-2 text-base text-muted-foreground">
+            <span className="text-black"><b>{detection}</b></span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span><b>Desk no:</b> {"5"}</span>
+            <span><b>Result:</b> {result}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span><b>Sitting Duration:</b> {"80.56"}</span>
+            <span><b>Title:</b> {title}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span><b>Login time:</b> {"12:00 PM"}</span>
+            <span><b>Location:</b> {location}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span><b>Logout time:</b> {"01:00 PM"}</span>
+            <span><b>Date:</b> {date}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span><b>Time:</b> {time}</span>
           </div>
         </div>
       </CardContent>
