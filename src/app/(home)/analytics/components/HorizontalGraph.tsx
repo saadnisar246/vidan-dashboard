@@ -18,8 +18,8 @@ interface HorizontalGraphProps {
 }
 
 // define dimensions in rem units
-const LABEL_COL_WIDTH_REM = 6;
-const HOUR_CELL_WIDTH_REM = 6;
+const LABEL_COL_WIDTH_REM = 5;
+const HOUR_CELL_WIDTH_REM = 5;
 
 const LABEL_COL_WIDTH = `${LABEL_COL_WIDTH_REM}rem`;
 const HOUR_CELL_WIDTH = `${HOUR_CELL_WIDTH_REM}rem`;

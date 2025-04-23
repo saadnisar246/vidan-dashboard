@@ -27,7 +27,7 @@ interface PieChartWithTableProps {
 const PieChartWithTable: React.FC<PieChartWithTableProps> = ({ data }) => {
   // Prepare the pie chart data
   const pieData = {
-    labels: data.map((item) => `Desk ${item.deskNumber}`),
+    labels: data.map((item) => `Desk ${item.deskNumber} ${item.workerName}`),
     datasets: [
       {
         label: "Sitting Time",
