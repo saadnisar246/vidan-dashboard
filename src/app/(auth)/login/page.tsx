@@ -21,7 +21,7 @@ export default function AuthenticationPage() {
     setError("");
 
     // Dummy credentials check
-    if (email === "user@email.com" && password === "password123") {
+    if (email === "vidan@email.com" && password === "vidan123") {
       router.push("/dashboard");
     } else {
       setError("Invalid email or password");
