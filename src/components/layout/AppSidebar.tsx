@@ -65,11 +65,22 @@ export default function AppSidebar() {
               </SidebarMenuItem>
               {/* Livestream */}
               <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === "/live"} className="py-5">
+                  <Link href={"/live"}>
+                    <div className={`flex items-center space-x-2 ${pathname === "/live" ? "text-blue-500" : "text-black"}`}>
+                      <ChartLine className="w-5 h-5" />
+                      <span className="text-xl">Livestream</span>
+                    </div>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {/* Live detetcions */}
+              <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/livestream"} className="py-5">
                   <Link href={"/livestream"}>
                     <div className={`flex items-center space-x-2 ${pathname === "/livestream" ? "text-blue-500" : "text-black"}`}>
                       <ChartLine className="w-5 h-5" />
-                      <span className="text-xl">Livestream</span>
+                      <span className="text-xl">Live detetcions</span>
                     </div>
                   </Link>
                 </SidebarMenuButton>
