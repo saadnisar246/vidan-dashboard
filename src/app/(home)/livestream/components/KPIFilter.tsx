@@ -18,17 +18,19 @@ import {
 import { cn } from "@/lib/utils";
 
 const options = [
-  { label: "Face Detection", value: "face_detection" },
-  { label: "Weapon Detection", value: "weapon" },
-  { label: "License Plate Recognition", value: "license_plate" },
-  { label: "Face Recognition", value: "face_recognition" },
-  { label: "Fire and Smoke Detection", value: "fire_smoke_detection" },
-  { label: "Personal Protective Equipment Detection", value: "personal_protective_equipment" },
+  { label: "All KPIs", value: null },
+  { label: "Face Detection", value: "fd" },
+  // { label: "Weapon Detection", value: "weapon" },
+  { label: "License Plate Recognition", value: "lpr" },
+  { label: "Face Recognition", value: "fr" },
+  // { label: "Fire and Smoke Detection", value: "fire_smoke_detection" },
+  { label: "Personal Protective Equipment Detection", value: "ppe" },
+  { label: "SiddiqSons Person Detection", value: "sspd" },
 ];
 
 type KPIFilterProps = {
   selected: string | null;
-  setSelected: (value: string) => void;
+  setSelected: (value: string | null) => void;
 };
 
 export function KPIFilter({ selected, setSelected }: KPIFilterProps) {

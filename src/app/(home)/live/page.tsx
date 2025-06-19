@@ -58,7 +58,7 @@ export default function LiveVideosPage() {
         Live Video Feeds
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
         {streamNames.map((streamKey) => {
           const b64 = latestFrames[streamKey];
           return (
@@ -69,7 +69,7 @@ export default function LiveVideosPage() {
               <img
                 src={`data:image/jpeg;base64,${b64}`}
                 alt={`Live feed: ${streamKey}`}
-                className="w-full h-64 object-cover bg-black"
+                className="w-full h-72 object-cover bg-black"
               />
               <div className="p-2">
                 <h3 className="text-md font-semibold text-gray-700 truncate">
