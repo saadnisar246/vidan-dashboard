@@ -2,8 +2,8 @@
 import React from "react";
 
 export interface TimeSlot {
-  start: number;
-  end: number;
+  start: number; // decimal hours
+  end: number;   // decimal hours
 }
 
 export interface DeskData {
@@ -30,22 +30,23 @@ const HorizontalGraph: React.FC<HorizontalGraphProps> = ({
   timeRange,
 }) => {
   const totalHours = timeRange.end - timeRange.start;
-  // labels for each hour slot
   const hourLabels = Array.from(
     { length: totalHours },
     (_, i) => timeRange.start + i
   );
 
-  // grid-template columns: first label column then one per hour
   const gridCols = `${LABEL_COL_WIDTH} repeat(${totalHours}, ${HOUR_CELL_WIDTH})`;
-
-  // compute exact minimum width for scroll container
   const minGridWidth = `${
     LABEL_COL_WIDTH_REM + totalHours * HOUR_CELL_WIDTH_REM
   }rem`;
 
+  const formatTime = (t: number) => {
+    const h = Math.floor(t);
+    const m = Math.round((t - h) * 60);
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  };
+
   return (
-    // allow horizontal scrolling when content exceeds container width
     <div className="p-4 bg-white shadow rounded overflow-x-auto">
       <h2 className="text-lg font-semibold mb-4">Desk Sitting Time</h2>
 
@@ -61,18 +62,13 @@ const HorizontalGraph: React.FC<HorizontalGraphProps> = ({
           minWidth: minGridWidth,
         }}
       >
-        {/* empty corner */}
         <div />
-        {/* hour labels */}
         {hourLabels.map((h) => (
           <div key={h} className="text-left text-gray-500 text-sm">
             {h}:00
           </div>
         ))}
-
-        {/* spacer */}
         <div />
-        {/* ticks */}
         {hourLabels.map((_, i) => (
           <div key={i} className="flex justify-start">
             <div
@@ -101,51 +97,43 @@ const HorizontalGraph: React.FC<HorizontalGraphProps> = ({
               minWidth: minGridWidth,
             }}
           >
-            {/* label */}
             <div className="font-medium text-gray-700">
               Desk {desk.deskNumber}
             </div>
 
-            {/* timeline grid container */}
-            <div
-              className="h-8 bg-gray-100 relative"
-              style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${totalHours}, ${HOUR_CELL_WIDTH})`,
-              }}
-            >
-              {/* background grid lines */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: `repeat(${totalHours}, ${HOUR_CELL_WIDTH})`,
-                }}
-              >
-                {Array.from({ length: totalHours }).map((_, i) => (
-                  <div key={i} className="border-l border-gray-200 h-full" />
-                ))}
-              </div>
-
-              {/* occupied slots */}
-              {sorted.map((slot, idx) => (
+            {/* timeline row container */}
+            <div className="relative h-8 bg-gray-100" style={{ minWidth: minGridWidth }}>
+              {hourLabels.map((_, i) => (
                 <div
-                  key={idx}
-                  className="relative group h-full"
+                  key={i}
+                  className="absolute top-0 bottom-0 border-l border-gray-200"
                   style={{
-                    gridColumnStart: slot.start - timeRange.start + 1,
-                    gridColumnEnd: slot.end - timeRange.start + 1,
+                    left: `${(i / totalHours) * 100}%`,
+                    width: "1px",
                   }}
-                >
-                  {/* Blue block */}
-                  <div className="h-full bg-blue-500" />
-
-                  {/* Tooltip */}
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg">
-                    {`${desk.workerName}: ${slot.start}:00 – ${slot.end}:00`}
-                  </div>
-                </div>
+                />
               ))}
+
+              {sorted.map((slot, idx) => {
+                const slotStart = ((slot.start - timeRange.start) / totalHours) * 100;
+                const slotEnd = ((slot.end - timeRange.start) / totalHours) * 100;
+                const width = slotEnd - slotStart;
+
+                return (
+                  <div
+                    key={idx}
+                    className="absolute top-0 bottom-0 bg-blue-500 group"
+                    style={{
+                      left: `${slotStart}%`,
+                      width: `${width}%`,
+                    }}
+                  >
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg">
+                      {`${desk.workerName}: ${formatTime(slot.start)} – ${formatTime(slot.end)}`}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );

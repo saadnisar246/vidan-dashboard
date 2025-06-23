@@ -177,56 +177,11 @@ import { KPIFilter } from "./components/KPIFilter";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 
+import { useSSPDStore } from "@/store/sspdStore";
+
 
 // Detection Types
-interface LPRDetection {
-  car_id: number;
-  car_bbox: [number, number, number, number];
-  plate_bbox: [number, number, number, number];
-  plate_score: number;
-  plate_text: string;
-  text_score: number;
-}
-
-interface PPEDetection {
-  person_id: number;
-  bbox: [number, number, number, number];
-  ear: boolean;
-  ear_mufs: boolean;
-  face: boolean;
-  face_guard: boolean;
-  face_mask: boolean;
-  foot: boolean;
-  tool: boolean;
-  glasses: boolean;
-  gloves: boolean;
-  helmet: boolean;
-  hands: boolean;
-  head: boolean;
-  medical_suit: boolean;
-  shoes: boolean;
-  safety_suit: boolean;
-  safety_vest: boolean;
-}
-
-interface SSPDetection {
-  zone_id: number;
-  status: string;
-}
-
-interface FramePayload {
-  stream: string;
-  timestamp: string;
-  task: string;
-  frame: string;
-  detections: any[];
-}
-
-interface SSPDPair {
-  zone_id: number;
-  login?: FramePayload;
-  logout?: FramePayload;
-}
+import { LPRDetection, PPEDetection, SSPDetection, FramePayload, SSPDPair } from "@/lib/types"; // Adjust the import path as needed
 
 function renderDetections(task: string, detections: any[]) {
   switch (task) {
@@ -265,7 +220,9 @@ function renderDetections(task: string, detections: any[]) {
 export default function Livestream() {
   const [selectedKPI, setSelectedKPI] = useState<string | null>(null);
   const [frames, setFrames] = useState<FramePayload[]>([]);
-  const [sspdPairs, setSspdPairs] = useState<SSPDPair[]>([]);
+  // const [sspdPairs, setSspdPairs] = useState<SSPDPair[]>([]);
+  const sspdPairs = useSSPDStore((state) => state.pairs);
+  const addOrUpdatePair = useSSPDStore((state) => state.addOrUpdatePair);
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -279,27 +236,32 @@ export default function Livestream() {
         //   ...data,
         //   frame: data.frame?.substring(0, 30) + '...', // Avoid flooding console
         // });
+
         if (data.task === "sspd") {
           const det = data.detections[0] as SSPDetection;
-          setSspdPairs(prev => {
-            const updated = [...prev];
-            // Look for incomplete pair
-            // console.log('Creating card logic');
-            let pair = updated.find(p => p.zone_id === det.zone_id && !p.logout);
-            console.log('Found pair:', pair);
-            if (!pair || (pair.login && pair.logout)) {
-              // Start new pair
-              console.log(pair?.login, pair?.logout, (pair?.login && pair?.logout))
-              updated.unshift({ zone_id: det.zone_id, [det.status.toLowerCase()]: data });
-              console.log('Creating new pair:', updated[0]);
-            } else {
-              pair[det.status.toLowerCase() as 'login' | 'logout'] = data;
-              console.log('Updated existing pair:', pair);
-            }
-            return updated;
+          addOrUpdatePair({
+            zone_id: det.zone_id,
+            [det.status.toLowerCase()]: data,
           });
+          // setSspdPairs(prev => {
+          //   const updated = [...prev];
+          //   // Look for incomplete pair
+          //   // console.log('Creating card logic');
+          //   let pair = updated.find(p => p.zone_id === det.zone_id && !p.logout);
+          //   console.log('Found pair:', pair);
+          //   if (!pair || (pair.login && pair.logout)) {
+          //     // Start new pair
+          //     console.log(pair?.login, pair?.logout, (pair?.login && pair?.logout))
+          //     updated.unshift({ zone_id: det.zone_id, [det.status.toLowerCase()]: data });
+          //     console.log('Creating new pair:', updated[0]);
+          //   } else {
+          //     pair[det.status.toLowerCase() as 'login' | 'logout'] = data;
+          //     console.log('Updated existing pair:', pair);
+          //   }
+          //   return updated;
+          // });
           // print  sspd state
-          console.log('Current SSPD Pairs:', sspdPairs);
+          // console.log('Current SSPD Pairs:', sspdPairs);
         } else {
           setFrames(prev => [data, ...prev]);
         }

@@ -1,21 +1,21 @@
 "use client";
 
 import React from "react";
-import { LineGraph } from "./components/LineGraph";
-import { DeskTimeGraph } from "./components/DeskTimegraph";
-import { DeskTimePieChart } from "./components/DeskTimePieChart";
 
-import Graph2D from "./components/Graph2D";
 import HorizontalGraph, { DeskData } from "./components/HorizontalGraph";
 import PieChartWithTable, { DeskTime } from "./components/PieChartWithTable";
 
+import { useSSPDStore } from "@/store/sspdStore";
+import { transformSSPDToDeskData } from "@/lib/transformSSPDToDeskData";
+import { SSPDPair } from "@/lib/types";
+
+
 export default function Analytics() {
-  // Sample data for the Graph2D component
-  const graphLabels = ["Jan", "Feb", "Mar", "Apr", "May"];
-  const graphData = [12, 19, 3, 5, 2];
+  const sspdPairs: SSPDPair[] = useSSPDStore((state) => state.pairs);
+  const horizontalData = transformSSPDToDeskData(sspdPairs);
 
   // Sample data for the HorizontalGraph component
-  const horizontalData: DeskData[] = [
+  const horizontalData_: DeskData[] = [
     {
       deskNumber: 1,
       workerName: "Alice",
@@ -97,6 +97,7 @@ export default function Analytics() {
       ],
     },
   ];
+
   const timeRange = { start: 8, end: 23 };
 
   // Sample data for the PieChartWithTable component
@@ -115,10 +116,6 @@ export default function Analytics() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 space-y-6">
-      {/* <LineGraph /> */}
-      {/* <DeskTimeGraph /> */}
-      {/* <DeskTimePieChart /> */}
-      {/* <Graph2D labels={graphLabels} data={graphData} /> */}
       <HorizontalGraph data={horizontalData} timeRange={timeRange} />
       <PieChartWithTable data={deskTimeData} />
     </div>
