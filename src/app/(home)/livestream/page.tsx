@@ -175,8 +175,8 @@
 import { useEffect, useState } from 'react';
 import { KPIFilter } from "./components/KPIFilter";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { X } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+
 
 // Detection Types
 interface LPRDetection {
@@ -250,10 +250,11 @@ function renderDetections(task: string, detections: any[]) {
         </div>
       ));
     case "sspd":
-      return detections.map((det: SSPDetection, idx) => (
+      return detections.map((det: any, idx) => (
         <div key={idx} className="mb-2">
           <p className="text-sm text-gray-600">Zone ID: {det.zone_id}</p>
-          <p className="text-sm text-gray-600">Status: {det.status}</p>
+          <p className="text-sm text-gray-600">Login: {det.login ?? "—"}</p>
+          <p className="text-sm text-gray-600">Logout: {det.logout ?? "—"}</p>
         </div>
       ));
     default:
@@ -274,21 +275,21 @@ export default function Livestream() {
     socket.onmessage = (event) => {
       try {
         const data: FramePayload = JSON.parse(event.data);
-        console.log('Received frame data:', {
-          ...data,
-          frame: data.frame?.substring(0, 30) + '...', // Avoid flooding console
-        });
+        // console.log('Received frame data:', {
+        //   ...data,
+        //   frame: data.frame?.substring(0, 30) + '...', // Avoid flooding console
+        // });
         if (data.task === "sspd") {
           const det = data.detections[0] as SSPDetection;
           setSspdPairs(prev => {
             const updated = [...prev];
             // Look for incomplete pair
-            console.log('Creating card logic');
+            // console.log('Creating card logic');
             let pair = updated.find(p => p.zone_id === det.zone_id && !p.logout);
             console.log('Found pair:', pair);
             if (!pair || (pair.login && pair.logout)) {
               // Start new pair
-
+              console.log(pair?.login, pair?.logout, (pair?.login && pair?.logout))
               updated.unshift({ zone_id: det.zone_id, [det.status.toLowerCase()]: data });
               console.log('Creating new pair:', updated[0]);
             } else {
@@ -297,6 +298,8 @@ export default function Livestream() {
             }
             return updated;
           });
+          // print  sspd state
+          console.log('Current SSPD Pairs:', sspdPairs);
         } else {
           setFrames(prev => [data, ...prev]);
         }
@@ -307,14 +310,37 @@ export default function Livestream() {
     return () => socket.close();
   }, []);
 
+  // useEffect(() => {
+  //   console.log("Updated Frames:", frames);
+  // }, [frames]);
+
+  // useEffect(() => {
+  //   console.log("Updated SSPD Pairs:", sspdPairs);
+  // }, [sspdPairs]);
+
+
   const allFrames = [
     ...frames,
-    ...sspdPairs.flatMap(pair => [pair.login, pair.logout].filter(Boolean) as FramePayload[])
+    ...sspdPairs.map(pair => {
+      const latest = pair.logout || pair.login; // show logout if available, else login
+      return {
+        ...latest,
+        detections: [{
+          zone_id: pair.zone_id,
+          login: pair.login?.timestamp,
+          logout: pair.logout?.timestamp
+        }],
+        synthetic: true  // optional flag to distinguish
+      } as FramePayload;
+    })
   ];
+  // console.log("All Frames:", allFrames);
 
   const filteredFrames = selectedKPI && selectedKPI !== "all"
     ? allFrames.filter(f => f.task === selectedKPI)
     : allFrames;
+
+  // console.log("Filtered Frames:", filteredFrames);
 
   const currentSSPD = modalIndex !== null ? sspdPairs[modalIndex] : null;
 
