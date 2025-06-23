@@ -65,8 +65,8 @@ export default function AppSidebar() {
               </SidebarMenuItem>
               {/* Livestream */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/live"} className="py-5">
-                  <Link href={"/live"}>
+                <SidebarMenuButton asChild isActive={pathname === "/livestreams"} className="py-5">
+                  <Link href={"/livestreams"}>
                     <div className={`flex items-center space-x-2 ${pathname === "/live" ? "text-blue-500" : "text-black"}`}>
                       <ChartLine className="w-5 h-5" />
                       <span className="text-xl">Livestream</span>
@@ -74,13 +74,13 @@ export default function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {/* Live detetcions */}
+              {/* Live detections */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/livestream"} className="py-5">
-                  <Link href={"/livestream"}>
-                    <div className={`flex items-center space-x-2 ${pathname === "/livestream" ? "text-blue-500" : "text-black"}`}>
+                <SidebarMenuButton asChild isActive={pathname === "/lives_detections"} className="py-5">
+                  <Link href={"/lives_detections"}>
+                    <div className={`flex items-center space-x-2 ${pathname === "/lives_detections" ? "text-blue-500" : "text-black"}`}>
                       <ChartLine className="w-5 h-5" />
-                      <span className="text-xl">Live detetcions</span>
+                      <span className="text-xl">Live Detections</span>
                     </div>
                   </Link>
                 </SidebarMenuButton>

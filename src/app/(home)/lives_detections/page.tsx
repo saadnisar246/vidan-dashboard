@@ -374,7 +374,7 @@ export default function Livestream() {
               />
               <div className="p-4">
                 <h3 className="text-lg font-semibold text-gray-700 truncate">{frame.stream}</h3>
-                <p className="text-sm text-gray-500">{frame.timestamp}</p>
+                {/* <p className="text-sm text-gray-500">{frame.timestamp}</p> */}
                 <div className="mt-2">
                   <p className="text-base text-gray-600">Task: {frame.task.toUpperCase()}</p>
                   {frame.detections.length > 0 ? renderDetections(frame.task, frame.detections) : <p className="text-sm text-gray-500">No detections</p>}
