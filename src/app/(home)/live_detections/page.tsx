@@ -188,19 +188,19 @@ function renderDetections(task: string, detections: any[]) {
     case "lpr":
       return detections.map((det: LPRDetection, idx) => (
         <div key={idx} className="mb-2">
-          <p className="text-sm text-gray-600">Car ID: {det.car_id}</p>
-          <p className="text-sm text-gray-600">Plate: {det.plate_text}</p>
-          <p className="text-sm text-gray-600">
-            Confidence Score: {det.plate_score.toFixed(2)}
-          </p>
+          <p className="text-sm text-gray-600"><span className="font-semibold">Car ID:</span> {det.car_id}</p>
+          <p className="text-sm text-gray-600"><span className="font-semibold">Plate:</span> {det.plate_text}</p>
+          <p className="text-sm text-gray-600"><span className="font-semibold">Confidence Score:</span> {det.plate_score.toFixed(2)}</p>
         </div>
       ));
     case "ppe":
       return detections.map((det: PPEDetection, idx) => (
-        <div key={idx} className="mb-2 grid grid-cols-3 gap-2">
-          <p className="text-sm text-gray-600 col-span-3 font-bold">Person ID: {det.person_id}</p>
+        <div key={idx} className="mb-2">
+          <p className="text-sm text-gray-600 col-span-3"><span className="font-semibold">Person ID:</span> {det.person_id}</p>
           {Object.entries(det).filter(([key]) => key !== 'person_id' && typeof det[key as keyof PPEDetection] === 'boolean').map(([key, value]) => (
-            <p key={key} className={`text-sm text-gray-600 ${value ? "font-bold" : ""}`}>{key.replace("_", " ")}: {value ? "Yes" : "No"}</p>
+            <p key={key} className={`text-sm text-gray-600 ${value ? "font-semibold" : ""}`}>
+              {value && `Wearing ${key.charAt(0).toUpperCase() + key.slice(1).replace("_", " ")} ✓`}
+            </p>
           ))}
         </div>
       ));
@@ -338,7 +338,7 @@ export default function Livestream() {
                 <h3 className="text-lg font-semibold text-gray-700 truncate">{frame.stream}</h3>
                 {/* <p className="text-sm text-gray-500">{frame.timestamp}</p> */}
                 <div className="mt-2">
-                  <p className="text-base text-gray-600">Task: {frame.task.toUpperCase()}</p>
+                  <p className="text-base text-gray-600"><span className="font-semibold">Task:</span> {frame.task.toUpperCase()}</p>
                   {frame.detections.length > 0 ? renderDetections(frame.task, frame.detections) : <p className="text-sm text-gray-500">No detections</p>}
                 </div>
               </div>

@@ -45,7 +45,7 @@ export function KPIFilter({ selected, setSelected }: KPIFilterProps) {
             <Button
               variant="outline"
               className={cn(
-                "w-[300px] justify-between cursor-pointer",
+                "w-[320px] justify-between cursor-pointer",
                 !selected && "text-muted-foreground"
               )}
             >
