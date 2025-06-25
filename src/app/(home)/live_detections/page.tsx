@@ -1,187 +1,22 @@
-// 'use client';
-
-// import { useEffect, useState } from 'react';
-// import { KPIFilter } from "./components/KPIFilter";
-
-// // Detection Types
-
-// interface LPRDetection {
-//   car_id: number;
-//   car_bbox: [number, number, number, number];
-//   plate_bbox: [number, number, number, number];
-//   plate_score: number;
-//   plate_text: string;
-//   text_score: number;
-// }
-
-// interface PPEDetection {
-//   person_id: number;
-//   bbox: [number, number, number, number];
-//   ear: boolean;
-//   ear_mufs: boolean;
-//   face: boolean;
-//   face_guard: boolean;
-//   face_mask: boolean;
-//   foot: boolean;
-//   tool: boolean;
-//   glasses: boolean;
-//   gloves: boolean;
-//   helmet: boolean;
-//   hands: boolean;
-//   head: boolean;
-//   medical_suit: boolean;
-//   shoes: boolean;
-//   safety_suit: boolean;
-//   safety_vest: boolean;
-// }
-
-// interface SSPDetection {
-//   zone_id: number
-//   status: string; 
-// }
-
-// // Base FramePayload (generic for multiple tasks)
-// interface FramePayload {
-//   stream: string;
-//   timestamp: string;
-//   task: string;
-//   frame: string;
-//   detections: any[]; // will be cast dynamically
-// }
-
-// function renderDetections(task: string, detections: any[]) {
-//   switch (task) {
-//     case "lpr":
-//       return detections.map((det: LPRDetection, idx) => (
-//         <div key={idx} className="mb-2">
-//           <p className="text-sm text-gray-600">Car ID: {det.car_id}</p>
-//           <p className="text-sm text-gray-600">Plate: {det.plate_text}</p>
-//           <p className="text-sm text-gray-600">
-//             Confidence Score: {det.plate_score.toFixed(2)}
-//           </p>
-//         </div>
-//       ));
-//     case "ppe":
-//       return detections.map((det: PPEDetection, idx) => (
-//         <div key={idx} className="mb-2 grid grid-cols-3 gap-2">
-//           <p className="text-sm text-gray-600 col-span-3 font-bold">Person ID: {det.person_id}</p>
-//           <p className={`text-sm text-gray-600 ${det.ear ? "font-bold" : ""}`}>Ear: {det.ear ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.ear_mufs ? "font-bold" : ""}`}>Ear Mufs: {det.ear_mufs ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.face ? "font-bold" : ""}`}>Face: {det.face ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.face_guard ? "font-bold" : ""}`}>Face Guard: {det.face_guard ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.face_mask ? "font-bold" : ""}`}>Face Mask: {det.face_mask ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.foot ? "font-bold" : ""}`}>Foot: {det.foot ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.tool ? "font-bold" : ""}`}>Tool: {det.tool ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.glasses ? "font-bold" : ""}`}>Glasses: {det.glasses ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.gloves ? "font-bold" : ""}`}>Gloves: {det.gloves ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.helmet ? "font-bold" : ""}`}>Helmet: {det.helmet ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.hands ? "font-bold" : ""}`}>Hands: {det.hands ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.head ? "font-bold" : ""}`}>Head: {det.head ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.medical_suit ? "font-bold" : ""}`}>Medical Suit: {det.medical_suit ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.shoes ? "font-bold" : ""}`}>Shoes: {det.shoes ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.safety_suit ? "font-bold" : ""}`}>Safety Suit: {det.safety_suit ? "Yes" : "No"}</p>
-//           <p className={`text-sm text-gray-600 ${det.safety_vest ? "font-bold" : ""}`}>Safety Vest: {det.safety_vest ? "Yes" : "No"}</p>
-//         </div>
-//       ));
-//     case "sspd":
-//       return detections.map((det: SSPDetection, idx) => (
-//         <div key={idx} className="mb-2">
-//           <p className="text-sm text-gray-600">Zone ID: {det.zone_id}</p>
-//           <p className="text-sm text-gray-600">Status: {det.status}</p>
-//         </div>
-//       ));
-
-//     default:
-//       return <p className="text-sm text-gray-500">No renderer for this task</p>;
-//   }
-// }
-
-// export default function Livestream() {
-//   const [selectedKPI, setSelectedKPI] = useState<string | null>(null);
-//   const [frames, setFrames] = useState<FramePayload[]>([]);
-
-//   useEffect(() => {
-//     const socket = new WebSocket('ws://192.168.0.188:8765');
-//     console.log('Connecting to WebSocket server at ws://192.168.0.188:8765');
-
-//     socket.onmessage = (event) => {
-//       try {
-//         const data: FramePayload = JSON.parse(event.data);
-//         console.log('Received frame data:', {
-//           ...data,
-//           frame: data.frame?.substring(0, 30) + '...', // Avoid flooding console
-//         });
-//         setFrames((prevFrames) => [data, ...prevFrames]);
-//       } catch (error) {
-//         console.error('Error parsing message:', error);
-//       }
-//     };
-
-//     return () => {
-//       socket.close();
-//     };
-//   }, []);
-
-//   const filteredFrames = selectedKPI
-//     ? frames.filter((frame) => frame.task === selectedKPI)
-//     : frames;
-
-//   return (
-//     <div className="min-h-screen bg-gray-100 py-8 px-4">
-//       <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">Live Detections</h1>
-
-//       <div className="lg:px-6">
-//         <KPIFilter selected={selectedKPI} setSelected={setSelectedKPI} />
-//       </div>
-
-//       {filteredFrames.length === 0 ? (
-//         <p className="text-center text-gray-500 mt-10">No frames yet for selected KPI.</p>
-//       ) : (
-//         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
-//           {filteredFrames.map((frame, idx) => (
-//             <div
-//               key={`${frame.timestamp}-${frame.stream}-${idx}`}
-//               className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200"
-//             >
-//               <img
-//                 src={`data:image/jpeg;base64,${frame.frame}`}
-//                 alt={`Frame from ${frame.stream}`}
-//                 className="w-full h-[320px] object-contain"
-//               />
-//               <div className="p-4">
-//                 <h3 className="text-lg font-semibold text-gray-700 truncate">{frame.stream}</h3>
-//                 <p className="text-sm text-gray-500">{frame.timestamp}</p>
-//                 <div className="mt-2">
-//                   <p className="text-base text-gray-600">Task: {frame.task.toUpperCase()}</p>
-//                   {/* <p className="text-base text-gray-600">Task Detections: {frame.detections}</p> */}
-//                   {frame.detections.length > 0 ? (
-//                     renderDetections(frame.task, frame.detections)
-//                   ) : (
-//                     <p className="text-sm text-gray-500">No detections</p>
-//                   )}
-//                 </div>
-//               </div>
-//             </div>
-//           ))}
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import { KPIFilter } from "./components/KPIFilter";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationLink,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useSSPDStore } from "@/store/sspdStore";
-
-
-// Detection Types
-import { LPRDetection, PPEDetection, SSPDetection, FramePayload, SSPDPair } from "@/lib/types"; // Adjust the import path as needed
+import { LPRDetection, PPEDetection, SSPDetection, FramePayload, SSPDPair, PersonDetection } from "@/lib/types";
 
 function renderDetections(task: string, detections: any[]) {
   switch (task) {
@@ -194,22 +29,32 @@ function renderDetections(task: string, detections: any[]) {
         </div>
       ));
     case "ppe":
-      return detections.map((det: PPEDetection, idx) => (
-        <div key={idx} className="mb-2">
-          <p className="text-sm text-gray-600 col-span-3"><span className="font-semibold">Person ID:</span> {det.person_id}</p>
-          {Object.entries(det).filter(([key]) => key !== 'person_id' && typeof det[key as keyof PPEDetection] === 'boolean').map(([key, value]) => (
-            <p key={key} className={`text-sm text-gray-600 ${value ? "font-semibold" : ""}`}>
-              {value && `Wearing ${key.charAt(0).toUpperCase() + key.slice(1).replace("_", " ")} ✓`}
-            </p>
-          ))}
-        </div>
-      ));
+      return (
+        <div className="grid grid-cols-2 gap-2">{detections.map((det: PPEDetection, idx) => (
+          <div key={idx} className="mb-2">
+            <p className="text-sm text-gray-600"><span className="font-semibold">Person ID:</span> {det.person_id}</p>
+            {Object.entries(det)
+              .filter(([key]) => key !== 'person_id' && typeof det[key as keyof PPEDetection] === 'boolean')
+              .map(([key, value]) => (
+                <p key={key} className={`text-sm text-gray-600 ${value ? "font-semibold" : ""}`}>
+                  {value && `Wearing ${key.replaceAll("_", " ")}`}
+                </p>
+              ))}
+          </div>
+        ))}</div>
+      );
     case "sspd":
       return detections.map((det: any, idx) => (
         <div key={idx} className="mb-2">
           <p className="text-sm text-gray-600">Zone ID: {det.zone_id}</p>
           <p className="text-sm text-gray-600">Login: {det.login ?? "—"}</p>
           <p className="text-sm text-gray-600">Logout: {det.logout ?? "—"}</p>
+        </div>
+      ));
+    case "persondetector":
+      return detections.map((det: PersonDetection, idx) => (
+        <div key={idx} className="mb-2">
+          <p className="text-sm text-gray-600"><span className="font-semibold">Person ID:</span> {det.person_id}</p>
         </div>
       ));
     default:
@@ -220,48 +65,27 @@ function renderDetections(task: string, detections: any[]) {
 export default function Livestream() {
   const [selectedKPI, setSelectedKPI] = useState<string | null>(null);
   const [frames, setFrames] = useState<FramePayload[]>([]);
-  // const [sspdPairs, setSspdPairs] = useState<SSPDPair[]>([]);
   const sspdPairs = useSSPDStore((state) => state.pairs);
   const addOrUpdatePair = useSSPDStore((state) => state.addOrUpdatePair);
   const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const [modalFrame, setModalFrame] = useState<FramePayload | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const itemsPerPage = 6;
 
   useEffect(() => {
     const socket = new WebSocket('ws://192.168.0.188:8765');
-    console.log('Connecting to WebSocket server at ws://192.168.0.188:8765');
-
     socket.onmessage = (event) => {
       try {
         const data: FramePayload = JSON.parse(event.data);
-        // console.log('Received frame data:', {
-        //   ...data,
-        //   frame: data.frame?.substring(0, 30) + '...', // Avoid flooding console
-        // });
-
+        setLoading(false);
+        console.log("Received frame:", data);
         if (data.task === "sspd") {
           const det = data.detections[0] as SSPDetection;
           addOrUpdatePair({
             zone_id: det.zone_id,
             [det.status.toLowerCase()]: data,
           });
-          // setSspdPairs(prev => {
-          //   const updated = [...prev];
-          //   // Look for incomplete pair
-          //   // console.log('Creating card logic');
-          //   let pair = updated.find(p => p.zone_id === det.zone_id && !p.logout);
-          //   console.log('Found pair:', pair);
-          //   if (!pair || (pair.login && pair.logout)) {
-          //     // Start new pair
-          //     console.log(pair?.login, pair?.logout, (pair?.login && pair?.logout))
-          //     updated.unshift({ zone_id: det.zone_id, [det.status.toLowerCase()]: data });
-          //     console.log('Creating new pair:', updated[0]);
-          //   } else {
-          //     pair[det.status.toLowerCase() as 'login' | 'logout'] = data;
-          //     console.log('Updated existing pair:', pair);
-          //   }
-          //   return updated;
-          // });
-          // print  sspd state
-          // console.log('Current SSPD Pairs:', sspdPairs);
         } else {
           setFrames(prev => [data, ...prev]);
         }
@@ -272,19 +96,10 @@ export default function Livestream() {
     return () => socket.close();
   }, []);
 
-  // useEffect(() => {
-  //   console.log("Updated Frames:", frames);
-  // }, [frames]);
-
-  // useEffect(() => {
-  //   console.log("Updated SSPD Pairs:", sspdPairs);
-  // }, [sspdPairs]);
-
-
   const allFrames = [
     ...frames,
     ...sspdPairs.map(pair => {
-      const latest = pair.logout || pair.login; // show logout if available, else login
+      const latest = pair.logout || pair.login;
       return {
         ...latest,
         detections: [{
@@ -292,19 +107,59 @@ export default function Livestream() {
           login: pair.login?.timestamp,
           logout: pair.logout?.timestamp
         }],
-        synthetic: true  // optional flag to distinguish
+        synthetic: true
       } as FramePayload;
     })
   ];
-  // console.log("All Frames:", allFrames);
 
   const filteredFrames = selectedKPI && selectedKPI !== "all"
     ? allFrames.filter(f => f.task === selectedKPI)
     : allFrames;
 
-  // console.log("Filtered Frames:", filteredFrames);
+  const totalPages = Math.ceil(filteredFrames.length / itemsPerPage);
+  const paginatedFrames = filteredFrames.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const currentSSPD = modalIndex !== null ? sspdPairs[modalIndex] : null;
+
+  const renderPagination = () => {
+    const pageLinks = [];
+    const range = 2;
+    const start = Math.max(1, currentPage - range);
+    const end = Math.min(totalPages, currentPage + range);
+
+    if (start > 1) {
+      pageLinks.push(<PaginationItem key={1}><PaginationLink href="#" onClick={() => setCurrentPage(1)} className="cursor-pointer">1</PaginationLink></PaginationItem>);
+      if (start > 2) pageLinks.push(<PaginationItem key="ellipsis-start"><PaginationEllipsis /></PaginationItem>);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pageLinks.push(
+        <PaginationItem key={i}>
+          <PaginationLink href="#" isActive={i === currentPage} onClick={() => setCurrentPage(i)} className="cursor-pointer">{i}</PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    if (end < totalPages) {
+      if (end < totalPages - 1) pageLinks.push(<PaginationItem key="ellipsis-end"><PaginationEllipsis /></PaginationItem>);
+      pageLinks.push(
+        <PaginationItem key={totalPages}><PaginationLink href="#" onClick={() => setCurrentPage(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink></PaginationItem>
+      );
+    }
+
+    return (
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem><PaginationPrevious onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="cursor-pointer" /></PaginationItem>
+          {pageLinks}
+          <PaginationItem><PaginationNext onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="cursor-pointer" /></PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
@@ -313,48 +168,59 @@ export default function Livestream() {
         <KPIFilter selected={selectedKPI} setSelected={setSelectedKPI} />
       </div>
 
-      {filteredFrames.length === 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
+          {Array.from({ length: itemsPerPage }).map((_, idx) => (
+            <div key={idx} className="p-4 space-y-4 bg-white shadow rounded">
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          ))}
+        </div>
+      ) : filteredFrames.length === 0 ? (
         <p className="text-center text-gray-500 mt-10">No frames yet for selected KPI.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
-          {filteredFrames.map((frame, idx) => (
-            <div
-              key={`${frame.timestamp}-${frame.stream}-${idx}`}
-              className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200 cursor-pointer"
-              onClick={() => {
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
+            {paginatedFrames.map((frame, idx) => (
+              <div key={`${frame.timestamp}-${frame.stream}-${idx}`} className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200 cursor-pointer" onClick={() => {
                 if (frame.task === "sspd") {
                   const zone_id = frame.detections[0].zone_id;
                   const index = sspdPairs.findIndex(pair => pair.zone_id === zone_id && (pair.login?.timestamp === frame.timestamp || pair.logout?.timestamp === frame.timestamp));
                   if (index !== -1) setModalIndex(index);
+                } else {
+                  setModalFrame(frame);
                 }
-              }}
-            >
-              <img
-                src={`data:image/jpeg;base64,${frame.frame}`}
-                alt={`Frame from ${frame.stream}`}
-                className="w-full h-auto object-contain"
-              />
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-700 truncate">{frame.stream}</h3>
-                {/* <p className="text-sm text-gray-500">{frame.timestamp}</p> */}
-                <div className="mt-2">
-                  <p className="text-base text-gray-600"><span className="font-semibold">Task:</span> {frame.task.toUpperCase()}</p>
-                  {frame.detections.length > 0 ? renderDetections(frame.task, frame.detections) : <p className="text-sm text-gray-500">No detections</p>}
+              }}>
+                <img src={`data:image/jpeg;base64,${frame.frame}`} alt={`Frame from ${frame.stream}`} className="w-full h-auto object-contain" />
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-gray-700 truncate">{frame.stream}</h3>
+                  <div className="mt-2">
+                    <p className="text-base text-gray-600"><span className="font-semibold">Task:</span> {frame.task.toUpperCase()}</p>
+                    {frame.detections.length > 0 ? renderDetections(frame.task, frame.detections) : <p className="text-sm text-gray-500">No detections</p>}
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-8">
+              {renderPagination()}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       <Dialog open={modalIndex !== null} onOpenChange={() => setModalIndex(null)}>
         <DialogContent className="max-w-4xl w-full p-6">
           <DialogTitle>SSPD Frame Viewer</DialogTitle>
           <DialogDescription>Slide between Login and Logout frames for selected Zone.</DialogDescription>
-          {/* <button className="absolute top-4 right-4 text-gray-600 hover:text-black" onClick={() => setModalIndex(null)}>
-            <X className="w-6 h-6" />
-          </button> */}
-          {currentSSPD && (
+          {!currentSSPD ? (
+            <Skeleton className="w-full h-80" />
+          ) : (
             <Carousel>
               <CarouselContent>
                 {currentSSPD.login && (
@@ -371,6 +237,20 @@ export default function Livestream() {
                 )}
               </CarouselContent>
             </Carousel>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modalFrame !== null} onOpenChange={() => setModalFrame(null)}>
+        <DialogContent className="max-w-3xl w-full p-6">
+          {!modalFrame ? (
+            <Skeleton className="w-full h-80" />
+          ) : (
+            <>
+              <DialogTitle>Detection - {modalFrame.task.toUpperCase()}</DialogTitle>
+              <img src={`data:image/jpeg;base64,${modalFrame.frame}`} alt="Detection Frame" className="w-full mt-4 rounded-lg" />
+              <div className="mt-4">{renderDetections(modalFrame.task, modalFrame.detections)}</div>
+            </>
           )}
         </DialogContent>
       </Dialog>

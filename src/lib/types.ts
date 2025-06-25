@@ -29,6 +29,11 @@ export interface PPEDetection {
   safety_vest: boolean;
 }
 
+export interface PersonDetection {
+  person_id: number;
+  bbox: [number, number, number, number];
+}
+
 export interface SSPDetection {
   zone_id: number;
   status: string;
