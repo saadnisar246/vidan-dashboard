@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { MultiSelectDropdown } from './components/MultiSelectDropdown';
 
@@ -18,102 +17,113 @@ const KPI_OPTIONS = [
   { value: "lpr", label: "License Plate Recognition (LPR)" },
   { value: "ppe", label: "PPE Detection" },
   { value: "sspd", label: "SSPD" },
-  { value: "person", label: "Person Detection" },  // Adjusted from "persondetector"
+  { value: "person", label: "Person Detection" },
 ];
 
 export default function StreamConfigPage() {
-  const [streams, setStreams] = useState<StreamEntry[]>([]);
-  const [newStream, setNewStream] = useState<StreamEntry>({ rtsp: '', kpi: [] });
+  const [formList, setFormList] = useState<StreamEntry[]>([
+    { rtsp: '', kpi: [] }
+  ]);
+  const [finalJson, setFinalJson] = useState('');
   const wsRef = useRef<WebSocket | null>(null);
-  const streamCounter = useRef(0);
 
-  // Initialize WebSocket once
-  const ensureWebSocket = () => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      wsRef.current = new WebSocket("ws://192.168.0.188:8765");
-      wsRef.current.onopen = () => {
-        wsRef.current?.send("__CONFIG__");
-      };
-      wsRef.current.onerror = (e) => console.error("WebSocket error:", e);
-      wsRef.current.onmessage = (e) => console.log("Server:", e.data);
-    }
+  // --- WebSocket Setup ---
+  useEffect(() => {
+    wsRef.current = new WebSocket("ws://192.168.0.188:8765");
+    wsRef.current.onopen = () => {
+      console.log("✅ WebSocket connected");
+      wsRef.current?.send("__CONFIG__");
+    };
+    wsRef.current.onerror = (e) => console.error("❌ WebSocket error:", e);
+    wsRef.current.onmessage = (e) => console.log("📨 Server:", e.data);
+
+    return () => {
+      wsRef.current?.close();
+    };
+  }, []);
+
+  const updateFormField = (index: number, field: keyof StreamEntry, value: any) => {
+    const updated = [...formList];
+    updated[index][field] = value;
+    setFormList(updated);
   };
 
-  const sendToServer = (stream: StreamEntry) => {
-    ensureWebSocket();
+  const addNewFormBlock = () => {
+    setFormList(prev => [...prev, { rtsp: '', kpi: [] }]);
+  };
 
-    const stream_id = `stream_${streamCounter.current++}`;
+  const sendStreamToServer = (index: number, stream: StreamEntry) => {
+    const stream_id = index.toString().padStart(2, '0');
     const payload = {
       action: "add_stream",
-      stream_id,
+      stream_id: `stream_${stream_id}`,
       rtsp_url: stream.rtsp,
-      detection_classes: stream.kpi
+      detection_classes: stream.kpi,
     };
 
     const send = () => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify(payload));
       } else {
-        setTimeout(send, 200);  // Retry until open
+        setTimeout(send, 200);
       }
     };
 
     send();
   };
 
-  const handleAddStream = () => {
-    if (newStream.rtsp && newStream.kpi.length > 0) {
-      setStreams(prev => [...prev, newStream]);
-      sendToServer(newStream);
-      setNewStream({ rtsp: '', kpi: [] });
-    }
-  };
+  const handleSubmitStreams = () => {
+    const validStreams = formList.filter(f => f.rtsp && f.kpi.length > 0);
+    const configJson = validStreams.map((stream, idx) => ({
+      stream_id: idx.toString().padStart(2, '0'),
+      rtsp_url: stream.rtsp,
+      detection_classes: stream.kpi
+    }));
 
-  const handleDownloadJSON = () => {
-    const jsonData = JSON.stringify(streams, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'stream_config.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    setFinalJson(JSON.stringify(configJson, null, 2));
+
+    validStreams.forEach((stream, i) => {
+      sendStreamToServer(i, stream);
+    });
   };
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">Configure RTSP Streams</h1>
 
-      <div className="max-w-2xl mx-auto space-y-4">
-        <Card className="p-4 space-y-4">
-          <Input
-            placeholder="RTSP URL"
-            value={newStream.rtsp}
-            onChange={(e) => setNewStream({ ...newStream, rtsp: e.target.value })}
-          />
+      <div className="max-w-3xl mx-auto space-y-6">
+        {formList.map((stream, idx) => (
+          <Card key={idx} className="p-4 space-y-4">
+            <Label>RTSP URL:</Label>
+            <Input
+              placeholder="e.g. rtsp://localhost:8554/stream"
+              value={stream.rtsp}
+              onChange={(e) => updateFormField(idx, 'rtsp', e.target.value)}
+            />
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">Select KPI(s):</Label>
-                <MultiSelectDropdown
-                selected={newStream.kpi}
-                options={KPI_OPTIONS}
-                onChange={(kpis) => setNewStream({ ...newStream, kpi: kpis })}
-                />
+            <Label>Select KPI(s):</Label>
+            <MultiSelectDropdown
+              selected={stream.kpi}
+              options={KPI_OPTIONS}
+              onChange={(kpis) => updateFormField(idx, 'kpi', kpis)}
+            />
+          </Card>
+        ))}
+
+        <Button variant="secondary" onClick={addNewFormBlock}>➕ Add Another Stream</Button>
+
+        <Button className="w-full" onClick={handleSubmitStreams}>✅ Add Streams</Button>
+
+        {finalJson && (
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold mb-2 text-gray-700">Generated JSON:</h2>
+            <Textarea
+              className="w-full h-64 font-mono text-sm"
+              value={finalJson}
+              readOnly
+            />
           </div>
-
-          <Button className="cursor-pointer" onClick={handleAddStream}>Add Stream</Button>
-        </Card>
-
-        <div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Configured Streams</h2>
-          <Textarea
-            className="w-full h-64 font-mono text-sm"
-            value={JSON.stringify(streams, null, 2)}
-            readOnly
-          />
-        </div>
-
-        <Button className="w-full" onClick={handleDownloadJSON}>Download Config JSON</Button>
+        )}
       </div>
     </div>
   );
