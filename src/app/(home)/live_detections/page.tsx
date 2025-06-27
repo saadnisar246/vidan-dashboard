@@ -197,6 +197,7 @@ export default function Livestream() {
                 <img src={`data:image/jpeg;base64,${frame.frame}`} alt={`Frame from ${frame.stream}`} className="w-full h-auto object-contain" />
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-gray-700 truncate">{frame.stream}</h3>
+                  <h3 className="text-sm font-semibold text-gray-600 truncate">{frame.timestamp}</h3>
                   <div className="mt-2">
                     <p className="text-base text-gray-600"><span className="font-semibold">Task:</span> {frame.task.toUpperCase()}</p>
                     {frame.detections.length > 0 ? renderDetections(frame.task, frame.detections) : <p className="text-sm text-gray-500">No detections</p>}
