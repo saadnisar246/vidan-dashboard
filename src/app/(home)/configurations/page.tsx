@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { MultiSelectDropdown } from './components/MultiSelectDropdown';
 
 interface StreamEntry {
   rtsp: string;
@@ -29,7 +30,7 @@ export default function StreamConfigPage() {
   // Initialize WebSocket once
   const ensureWebSocket = () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      wsRef.current = new WebSocket("ws://localhost:8765");
+      wsRef.current = new WebSocket("ws://192.168.0.188:8765");
       wsRef.current.onopen = () => {
         wsRef.current?.send("__CONFIG__");
       };
@@ -58,16 +59,6 @@ export default function StreamConfigPage() {
     };
 
     send();
-  };
-
-  const toggleKPI = (value: string) => {
-    setNewStream(prev => {
-      const exists = prev.kpi.includes(value);
-      return {
-        ...prev,
-        kpi: exists ? prev.kpi.filter(k => k !== value) : [...prev.kpi, value]
-      };
-    });
   };
 
   const handleAddStream = () => {
@@ -103,21 +94,14 @@ export default function StreamConfigPage() {
 
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700">Select KPI(s):</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {KPI_OPTIONS.map(opt => (
-                <div key={opt.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={opt.value}
-                    checked={newStream.kpi.includes(opt.value)}
-                    onCheckedChange={() => toggleKPI(opt.value)}
-                  />
-                  <Label htmlFor={opt.value}>{opt.label}</Label>
-                </div>
-              ))}
-            </div>
+                <MultiSelectDropdown
+                selected={newStream.kpi}
+                options={KPI_OPTIONS}
+                onChange={(kpis) => setNewStream({ ...newStream, kpi: kpis })}
+                />
           </div>
 
-          <Button onClick={handleAddStream}>Add Stream</Button>
+          <Button className="cursor-pointer" onClick={handleAddStream}>Add Stream</Button>
         </Card>
 
         <div>
