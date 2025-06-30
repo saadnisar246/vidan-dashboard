@@ -87,9 +87,9 @@ export default function AppSidebar() {
               </SidebarMenuItem>
               {/* Configurations */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/configurations"} className="py-5">
-                  <Link href={"/configurations"}>
-                    <div className={`flex items-center space-x-2 ${pathname === "/configurations" ? "text-blue-500" : "text-black"}`}>
+                <SidebarMenuButton asChild isActive={pathname === "/configs"} className="py-5">
+                  <Link href={"/configs"}>
+                    <div className={`flex items-center space-x-2 ${pathname === "/configs" ? "text-blue-500" : "text-black"}`}>
                       <ChartLine className="w-5 h-5" />
                       <span className="text-xl">Configurations</span>
                     </div>

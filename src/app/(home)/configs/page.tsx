@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { MultiSelectDropdown } from './components/MultiSelectDropdown';
+import { useRouter } from "next/navigation";
 
 interface StreamEntry {
   rtsp: string;
@@ -21,6 +22,8 @@ const KPI_OPTIONS = [
 ];
 
 export default function StreamConfigPage() {
+  const router = useRouter();
+  
   const [formList, setFormList] = useState<StreamEntry[]>([
     { rtsp: '', kpi: [] }
   ]);
@@ -85,6 +88,10 @@ export default function StreamConfigPage() {
     validStreams.forEach((stream, i) => {
       sendStreamToServer(i, stream);
     });
+    
+    setTimeout(() => {
+      router.push("/live_detections");
+    }, 500); // Redirect after 0.5 seconds
   };
 
   return (
@@ -110,9 +117,9 @@ export default function StreamConfigPage() {
           </Card>
         ))}
 
-        <Button variant="secondary" onClick={addNewFormBlock}>➕ Add Another Stream</Button>
+        <Button variant="secondary" className="cursor-pointer" onClick={addNewFormBlock}>➕ Add Another Stream</Button>
 
-        <Button className="w-full" onClick={handleSubmitStreams}>✅ Add Streams</Button>
+        <Button className="w-full cursor-pointer" onClick={handleSubmitStreams}>✅ Add Streams</Button>
 
         {finalJson && (
           <div className="mt-6">
