@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { KPIFilter } from "./components/KPIFilter";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
@@ -14,6 +14,13 @@ import {
   PaginationEllipsis,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+import { format } from "date-fns";
 
 import { useSSPDStore } from "@/store/sspdStore";
 import { LPRDetection, PPEDetection, SSPDetection, FramePayload, SSPDPair, PersonDetection } from "@/lib/types";
@@ -63,7 +70,24 @@ function renderDetections(task: string, detections: any[]) {
 }
 
 export default function Livestream() {
-  const [selectedKPI, setSelectedKPI] = useState<string | null>(null);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  
+  // const [selectedKPI, setSelectedKPI] = useState<string | null>(null);
+
+  // Actual applied filters
+  const [appliedKPI, setAppliedKPI] = useState<string | null>(null);
+  const [appliedDate, setAppliedDate] = useState<Date | null>(null);
+  const [appliedZone, setAppliedZone] = useState<string | null>(null);
+  const [appliedActivity, setAppliedActivity] = useState<string>("all");
+
+  // Draft filters in dialog
+  const [draftKPI, setDraftKPI] = useState<string | null>(null);
+  const [draftDate, setDraftDate] = useState<Date | null>(null);
+  const [draftZone, setDraftZone] = useState<string | null>(null);
+  const [draftActivity, setDraftActivity] = useState<string>("all");
+
+  const [showCalendar, setShowCalendar] = useState(false);
+
   const [frames, setFrames] = useState<FramePayload[]>([]);
   const sspdPairs = useSSPDStore((state) => state.pairs);
   const addOrUpdatePair = useSSPDStore((state) => state.addOrUpdatePair);
@@ -72,6 +96,8 @@ export default function Livestream() {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 6;
+
+  const uniqueZoneIds = Array.from(new Set(sspdPairs.map(pair => pair.zone_id))).sort();
 
   useEffect(() => {
     const socket = new WebSocket('ws://192.168.0.188:8765');
@@ -96,25 +122,42 @@ export default function Livestream() {
     return () => socket.close();
   }, []);
 
-  const allFrames = [
-    ...frames,
-    ...sspdPairs.map(pair => {
-      const latest = pair.logout || pair.login;
-      return {
-        ...latest,
-        detections: [{
-          zone_id: pair.zone_id,
-          login: pair.login?.timestamp,
-          logout: pair.logout?.timestamp
-        }],
-        synthetic: true
-      } as FramePayload;
-    })
-  ];
+  // Prepare draft when dialog opens
+  useEffect(() => {
+    if (filterDialogOpen) {
+      setDraftKPI(appliedKPI);
+      setDraftDate(appliedDate);
+      setDraftZone(appliedZone);
+      setDraftActivity(appliedActivity);
+    }
+  }, [filterDialogOpen]);
 
-  const filteredFrames = selectedKPI && selectedKPI !== "all"
-    ? allFrames.filter(f => f.task === selectedKPI)
-    : allFrames;
+  // Filter data based on applied filters
+  const filteredPairs = useMemo(() => sspdPairs.filter(pair => {
+    if (appliedActivity === 'active') return pair.login && !pair.logout;
+    if (appliedActivity === 'not-active') return pair.login && pair.logout;
+    return true;
+  }), [sspdPairs, appliedActivity]);
+
+  const allFrames = useMemo(() => {
+    const list = [...frames];
+    filteredPairs.forEach(pair => {
+      const latest = pair.logout || pair.login;
+      list.push({
+        ...latest,
+        synthetic: true,
+        detections: [{ zone_id: pair.zone_id, login: pair.login?.timestamp, logout: pair.logout?.timestamp }]
+      } as FramePayload);
+    });
+    return list;
+  }, [frames, filteredPairs]);
+
+  const filteredFrames = useMemo(() => allFrames.filter(f => {
+    const byKPI = !appliedKPI || appliedKPI === 'all' || f.task === appliedKPI;
+    const byDate = !appliedDate || new Date(f.timestamp).toDateString() === appliedDate.toDateString();
+    const byZone = !appliedZone || (f.task === 'sspd' && f.detections[0]?.zone_id === appliedZone);
+    return byKPI && byDate && byZone;
+  }), [allFrames, appliedKPI, appliedDate, appliedZone]);
 
   const totalPages = Math.ceil(filteredFrames.length / itemsPerPage);
   const paginatedFrames = filteredFrames.slice(
@@ -164,8 +207,101 @@ export default function Livestream() {
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">Live Detections</h1>
-      <div className="lg:px-6">
-        <KPIFilter selected={selectedKPI} setSelected={setSelectedKPI} />
+      <div className="flex justify-end mb-6">
+        
+        
+        <div className="flex justify-center items-end space-x-4">
+          <Button className="rounded cursor-pointer" onClick={() => setFilterDialogOpen(true)}>Filter Options</Button>
+        </div>
+        <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogTitle className="flex justify-between items-center">
+              <span>Filter Options</span>
+              <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => {
+                setDraftDate(null);
+                setDraftZone(null);
+                setDraftActivity("all");
+              }}>Clear All</Button>
+            </DialogTitle>
+            
+            <div className="space-y-4">
+              {/* KPI filter */}
+              <KPIFilter selected={draftKPI} setSelected={setDraftKPI} />
+
+              {/* Date filter */}
+              <div className="relative">
+                <Label className="text-sm font-medium text-gray-700 mb-1">Filter by Date</Label>
+                <Button
+                  variant="outline"
+                  className="w-fit justify-start text-left cursor-pointer"
+                  onClick={() => setShowCalendar(prev => !prev)}
+                >
+                  {draftDate ? format(draftDate, 'PPP') : 'Select date'}
+                </Button>
+                {showCalendar && (
+                  <div className="absolute top-full mt-2 z-50">
+                    <Calendar
+                      mode="single"
+                      selected={draftDate ?? undefined}
+                      onSelect={date => {
+                        setDraftDate(date!);
+                        setShowCalendar(false);
+                      }}
+                      className="rounded-md border duration-300 ease-in-out shadow-lg"
+                    />
+                  </div>
+                )}
+              </div>
+              {/* Zone filter */}
+              <div className="flex flex-col space-y-1 cursor-pointer">
+                <Label className="text-sm font-medium text-gray-700">Filter by Zone ID</Label>
+                <Select onValueChange={(val) => setDraftZone(val === "all" ? null : val)} value={draftZone ?? "all"}>
+                  <SelectTrigger className="rounded cursor-pointer bg-white border-gray-300">
+                    <SelectValue placeholder="All Zones" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Zones</SelectItem>
+                    {uniqueZoneIds.map((zone) => (
+                      <SelectItem key={String(zone)} value={String(zone)}>
+                        {zone}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Activity Status filter */}
+              <div className="flex flex-col space-y-1 cursor-pointer">
+                <Label className="text-sm font-medium text-gray-700">Activity Status</Label>
+                <Select onValueChange={setDraftActivity} value={draftActivity}>
+                  <SelectTrigger className="rounded cursor-pointer bg-white border-gray-300">
+                    <SelectValue placeholder="Activity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="not-active">Not Active</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Button
+                onClick={() => {
+                  setAppliedKPI(draftKPI);
+                  setAppliedDate(draftDate);
+                  setAppliedZone(draftZone);
+                  setAppliedActivity(draftActivity);
+                  setFilterDialogOpen(false);
+                  setCurrentPage(1); // Optional: reset to first page after filtering
+                }}
+                className="cursor-pointer"
+              >
+                Apply Filters
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {loading ? (
