@@ -25,7 +25,7 @@
 //         setTimedOut(true);
 //         socket.close();
 //       }
-//     }, 10000); // 10 seconds timeout
+//     }, 20000); // 10 seconds timeout
 
 //     socket.onopen = () => {
 //       console.log('WebSocket onopen fired ✅');
@@ -34,6 +34,7 @@
 //     socket.onmessage = (event) => {
 //       try {
 //         const data: FrameData = JSON.parse(event.data);
+//         console.log(data)
 //         setLatestFrames((prev) => ({
 //           ...prev,
 //           [data.stream]: data.frame,
@@ -109,17 +110,23 @@
 //     </div>
 //   );
 // }
+
+
+
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { KPIFilter } from "./components/KPIFilter";
 
-const STREAM_NAMES = ['ppe', 'sspd', 'lpr']; // Add more stream names here if needed
+// const STREAM_NAMES = ['lpr']; // Add more stream names here if needed
 const MEDIAMTX_HOST = '192.168.0.188:8889';
 
 export default function LiveVideosPage() {
   const [loading, setLoading] = useState(true);
   const [timedOut, setTimedOut] = useState(false);
+  const [stream, setSelectedStream] = useState<string | null>('sspd');
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -141,36 +148,36 @@ export default function LiveVideosPage() {
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
-        Live WebRTC Feeds
+        Livestreams
       </h1>
-
+      <div className="flex items-start mb-4">
+        <KPIFilter selected={stream} setSelected={setSelectedStream} />
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
         {loading ? (
-          Array.from({ length: STREAM_NAMES.length }).map((_, idx) => (
-            <div key={idx} className="p-4 space-y-4 bg-white shadow rounded">
-              <Skeleton className="h-72 w-full" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          ))
-        ) : STREAM_NAMES.length > 0 ? (
-          STREAM_NAMES.map((name) => (
+          <div className="p-4 space-y-4 bg-white shadow rounded">
+            <Skeleton className="h-72 w-full" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ) : stream ? (
+          // STREAM_NAMES.map((name) => (
             <div
-              key={name}
+              // key={name}
               className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200"
             >
               <iframe
-                src={`http://${MEDIAMTX_HOST}/${name}`}
-                title={`Stream ${name}`}
+                src={`http://${MEDIAMTX_HOST}/${stream}`}
+                title={`Stream ${stream}`}
                 // allow="autoplay; fullscreen"
                 className="w-full h-72 bg-black object-cover"
               ></iframe>
               <div className="p-2">
                 <h3 className="text-md font-semibold text-gray-700 truncate">
-                  {name}
+                  {stream}
                 </h3>
               </div>
             </div>
-          ))
+          // ))
         ) : timedOut ? (
           <div className="col-span-full text-center text-red-500">
             ❌ No live streams detected after waiting. Please check the server.
@@ -184,3 +191,98 @@ export default function LiveVideosPage() {
     </div>
   );
 }
+
+
+// 'use client';
+
+// import { useEffect, useState, useRef } from 'react';
+// import WHEPClient from '@/lib/whep-client';
+// import { Skeleton } from '@/components/ui/skeleton';
+
+// const STREAM_NAMES = ['ppe']; // Add more stream names here
+// const MEDIAMTX_HOST = '192.168.0.188:8889';
+
+// export default function LiveVideosPage() {
+//   const [loading, setLoading] = useState(true);
+//   const [timedOut, setTimedOut] = useState(false);
+
+//   useEffect(() => {
+//     const timeout = setTimeout(() => {
+//       setLoading(false);
+//       setTimedOut(true);
+//     }, 10000); // 10 seconds
+
+//     const preloadCheck = setTimeout(() => {
+//       setLoading(false);
+//     }, 1000);
+
+//     return () => {
+//       clearTimeout(timeout);
+//       clearTimeout(preloadCheck);
+//     };
+//   }, []);
+
+//   return (
+//     <div className="min-h-screen bg-gray-100 py-8 px-4">
+//       <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
+//         Livestreams
+//       </h1>
+
+//       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+//         {loading ? (
+//           STREAM_NAMES.map((_, idx) => (
+//             <div key={idx} className="p-4 space-y-4 bg-white shadow rounded">
+//               <Skeleton className="h-72 w-full" />
+//               <Skeleton className="h-4 w-1/2" />
+//             </div>
+//           ))
+//         ) : STREAM_NAMES.length > 0 ? (
+//           STREAM_NAMES.map((name) => (
+//             <WHEPStream key={name} streamName={name} />
+//           ))
+//         ) : timedOut ? (
+//           <div className="col-span-full text-center text-red-500">
+//             ❌ No live streams detected after waiting. Please check the server.
+//           </div>
+//         ) : (
+//           <div className="col-span-full text-center text-gray-500">
+//             Awaiting video streams…
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function WHEPStream({ streamName }: { streamName: string }) {
+//   const videoRef = useRef<HTMLVideoElement>(null);
+
+//   useEffect(() => {
+//     const player = new WHEPClient({
+//       video: videoRef.current!,
+//       whepUrl: `http://${MEDIAMTX_HOST}/${streamName}`,
+//     });
+//     player.load();
+
+//     return () => {
+//       player.destroy();
+//     };
+//   }, [streamName]);
+
+//   return (
+//     <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
+//       <video
+//         ref={videoRef}
+//         autoPlay
+//         playsInline
+//         muted
+//         className="w-full h-72 bg-black object-cover"
+//       />
+//       <div className="p-2">
+//         <h3 className="text-md font-semibold text-gray-700 truncate">
+//           {streamName}
+//         </h3>
+//       </div>
+//     </div>
+//   );
+// }

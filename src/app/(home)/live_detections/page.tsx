@@ -18,12 +18,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import { format } from "date-fns";
 
 import { useSSPDStore } from "@/store/sspdStore";
-import { LPRDetection, PPEDetection, SSPDetection, FramePayload, SSPDPair, PersonDetection } from "@/lib/types";
+import { LPRDetection, VehicleDetection, PPEDetection, SSPDetection, FramePayload, PersonDetection } from "@/lib/types";
 
 function renderDetections(task: string, detections: any[]) {
   switch (task) {
@@ -32,7 +31,16 @@ function renderDetections(task: string, detections: any[]) {
         <div key={idx} className="mb-2">
           <p className="text-sm text-gray-600"><span className="font-semibold">Car ID:</span> {det.car_id}</p>
           <p className="text-sm text-gray-600"><span className="font-semibold">Plate:</span> {det.plate_text}</p>
-          <p className="text-sm text-gray-600"><span className="font-semibold">Confidence Score:</span> {det.plate_score.toFixed(2)}</p>
+          <p className="text-sm text-gray-600"><span className="font-semibold">Confidence Score:</span> {det.text_score.toFixed(2)}</p>
+        </div>
+      ));
+    case "vehicledetector":
+      return detections.map((det: VehicleDetection, idx) => (
+        <div key={idx} className="mb-2">
+          <p className="text-sm text-gray-600"><span className="font-semibold">Car:</span> {det.car || 0}</p>
+          <p className="text-sm text-gray-600"><span className="font-semibold">Truck:</span> {det.truck || 0}</p>
+          <p className="text-sm text-gray-600"><span className="font-semibold">Bus:</span> {det.bus || 0}</p>
+          <p className="text-sm text-gray-600"><span className="font-semibold">Motorcycle:</span> {det.motorcycle || 0}</p>
         </div>
       ));
     case "ppe":
@@ -56,6 +64,7 @@ function renderDetections(task: string, detections: any[]) {
           <p className="text-sm text-gray-600">Zone ID: {det.zone_id}</p>
           <p className="text-sm text-gray-600">Login: {det.login ?? "—"}</p>
           <p className="text-sm text-gray-600">Logout: {det.logout ?? "—"}</p>
+          <p className="text-sm text-gray-600 capitalize">Person: {det.person ?? "—"}</p>
         </div>
       ));
     case "persondetector":
@@ -91,13 +100,17 @@ export default function Livestream() {
   const [frames, setFrames] = useState<FramePayload[]>([]);
   const sspdPairs = useSSPDStore((state) => state.pairs);
   const addOrUpdatePair = useSSPDStore((state) => state.addOrUpdatePair);
-  const [modalIndex, setModalIndex] = useState<number | null>(null);
+  // const [modalIndex, setModalIndex] = useState<number | null>(null);
+  const [modalKey, setModalKey] = useState<string | null>(null);
+
   const [modalFrame, setModalFrame] = useState<FramePayload | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 6;
 
   const uniqueZoneIds = Array.from(new Set(sspdPairs.map(pair => pair.zone_id))).sort();
+
+  const makeSSPDKey = (pair: any) => `${pair.zone_id}-${pair.login?.timestamp || ""}-${pair.logout?.timestamp || ""}`;
 
   useEffect(() => {
     const socket = new WebSocket('ws://192.168.0.188:8765');
@@ -111,7 +124,7 @@ export default function Livestream() {
           addOrUpdatePair({
             zone_id: det.zone_id,
             [det.status.toLowerCase()]: data,
-          });
+          } as any);
         } else {
           setFrames(prev => [data, ...prev]);
         }
@@ -137,16 +150,24 @@ export default function Livestream() {
     if (appliedActivity === 'active') return pair.login && !pair.logout;
     if (appliedActivity === 'not-active') return pair.login && pair.logout;
     return true;
-  }), [sspdPairs, appliedActivity]);
+  })
+  , [sspdPairs, appliedActivity]);
 
   const allFrames = useMemo(() => {
     const list = [...frames];
     filteredPairs.forEach(pair => {
-      const latest = pair.logout || pair.login;
+      const latest = pair.login || pair.logout;
+      // Extract person from login/logout detection if available
+      let person = undefined;
+      if (pair.login && pair.login.detections && pair.login.detections[0]?.person) {
+        person = pair.login.detections[0].person;
+      } else if (pair.logout && pair.logout.detections && pair.logout.detections[0]?.person) {
+        person = pair.logout.detections[0].person;
+      }
       list.push({
         ...latest,
         synthetic: true,
-        detections: [{ zone_id: pair.zone_id, login: pair.login?.timestamp, logout: pair.logout?.timestamp }]
+        detections: [{ zone_id: pair.zone_id, login: pair.login?.timestamp, logout: pair.logout?.timestamp, person: person ?? "-" }]
       } as FramePayload);
     });
     return list;
@@ -165,7 +186,12 @@ export default function Livestream() {
     currentPage * itemsPerPage
   );
 
-  const currentSSPD = modalIndex !== null ? sspdPairs[modalIndex] : null;
+  // const currentSSPD = modalIndex !== null ? sspdPairs[modalIndex] : null;
+  const currentSSPD = useMemo(() => {
+    return modalKey
+      ? sspdPairs.find(pair => makeSSPDKey(pair) === modalKey)
+      : null;
+  }, [modalKey, sspdPairs]);
 
   const renderPagination = () => {
     const pageLinks = [];
@@ -208,8 +234,6 @@ export default function Livestream() {
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">Live Detections</h1>
       <div className="flex justify-end mb-6">
-        
-        
         <div className="flex justify-center items-end space-x-4">
           <Button className="rounded cursor-pointer" onClick={() => setFilterDialogOpen(true)}>Filter Options</Button>
         </div>
@@ -324,13 +348,20 @@ export default function Livestream() {
               <div key={`${frame.timestamp}-${frame.stream}-${idx}`} className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200 cursor-pointer" onClick={() => {
                 if (frame.task === "sspd") {
                   const zone_id = frame.detections[0].zone_id;
-                  const index = sspdPairs.findIndex(pair => pair.zone_id === zone_id && (pair.login?.timestamp === frame.timestamp || pair.logout?.timestamp === frame.timestamp));
-                  if (index !== -1) setModalIndex(index);
+                  // const index = sspdPairs.findIndex(pair => pair.zone_id === zone_id && (pair.login?.timestamp === frame.timestamp || pair.logout?.timestamp === frame.timestamp));
+                  // if (index !== -1) setModalIndex(index);
+                  const matching = sspdPairs.find(pair =>
+                    pair.zone_id === zone_id &&
+                    (pair.login?.timestamp === frame.timestamp || pair.logout?.timestamp === frame.timestamp)
+                  );
+                  if (matching) {
+                    setModalKey(makeSSPDKey(matching));
+                  }
                 } else {
                   setModalFrame(frame);
                 }
               }}>
-                <img src={`data:image/jpeg;base64,${frame.frame}`} alt={`Frame from ${frame.stream}`} className="w-full h-auto object-contain" />
+                <img src={`data:image/jpeg;base64,${frame.frame}`} alt={`Frame from ${frame.stream}`} className="w-full h-72 object-cover" />
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-gray-700 truncate">{frame.stream}</h3>
                   <h3 className="text-sm font-semibold text-gray-600 truncate">{frame.timestamp}</h3>
@@ -351,7 +382,7 @@ export default function Livestream() {
         </>
       )}
 
-      <Dialog open={modalIndex !== null} onOpenChange={() => setModalIndex(null)}>
+      <Dialog open={modalKey !== null} onOpenChange={() => setModalKey(null)}>
         <DialogContent className="max-w-4xl w-full p-6">
           <DialogTitle>SSPD Frame Viewer</DialogTitle>
           <DialogDescription>Slide between Login and Logout frames for selected Zone.</DialogDescription>
@@ -362,13 +393,13 @@ export default function Livestream() {
               <CarouselContent>
                 {currentSSPD.login && (
                   <CarouselItem>
-                    <img src={`data:image/jpeg;base64,${currentSSPD.login.frame}`} alt="Login Frame" className="w-full h-auto object-contain" />
+                    <img src={`data:image/jpeg;base64,${currentSSPD.login.frame}`} alt="Login Frame" className="w-full h-80 object-cover" />
                     <p className="text-center mt-2 font-medium">Login - {currentSSPD.login.timestamp}</p>
                   </CarouselItem>
                 )}
                 {currentSSPD.logout && (
                   <CarouselItem>
-                    <img src={`data:image/jpeg;base64,${currentSSPD.logout.frame}`} alt="Logout Frame" className="w-full h-auto object-contain" />
+                    <img src={`data:image/jpeg;base64,${currentSSPD.logout.frame}`} alt="Logout Frame" className="w-full h-80 object-cover" />
                     <p className="text-center mt-2 font-medium">Logout - {currentSSPD.logout.timestamp}</p>
                   </CarouselItem>
                 )}
@@ -385,6 +416,9 @@ export default function Livestream() {
           ) : (
             <>
               <DialogTitle>Detection - {modalFrame.task.toUpperCase()}</DialogTitle>
+              <DialogDescription className="text-sm text-gray-500 mb-4">
+                Apply filters based on KPI, date, zone, and activity status.
+              </DialogDescription>
               <img src={`data:image/jpeg;base64,${modalFrame.frame}`} alt="Detection Frame" className="w-full mt-4 rounded-lg" />
               <div className="mt-4">{renderDetections(modalFrame.task, modalFrame.detections)}</div>
             </>

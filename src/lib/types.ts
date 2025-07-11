@@ -8,6 +8,13 @@ export interface LPRDetection {
   text_score: number;
 }
 
+export interface VehicleDetection {
+  car?: number;
+  truck?: number;
+  bus?: number;
+  motorcycle?: number;
+}
+
 export interface PPEDetection {
   person_id: number;
   bbox: [number, number, number, number];
@@ -37,6 +44,7 @@ export interface PersonDetection {
 export interface SSPDetection {
   zone_id: number;
   status: string;
+  person: string | null;
 }
 
 export interface FramePayload {
@@ -51,4 +59,5 @@ export interface SSPDPair {
   zone_id: number;
   login?: FramePayload;
   logout?: FramePayload;
+  person?: FramePayload;
 }

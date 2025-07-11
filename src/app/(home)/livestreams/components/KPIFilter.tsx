@@ -10,19 +10,18 @@ type KPIFilterProps = {
 };
 
 const options = [
-  { label: "All KPIs", value: null },
-  { label: "Face Detection", value: "fd" },
-  { label: "Vehicle Detection", value: "vehicledetector" },
-  { label: "License Plate Recognition", value: "lpr" },
-  { label: "Face Recognition", value: "fr" },
-  { label: "Personal Protective Equipment Detection", value: "ppe" },
-  { label: "SiddiqSons Person Detection", value: "sspd" },
+  { label: "SiddiqSons Stream", value: "sspd" },
+  { label: "License Plate Recognition Stream", value: "lpr" },
+  { label: "Face Detection Stream", value: "fd" },
+  { label: "Vehicle Detection Stream", value: "vehicledetector" },
+  { label: "Face Recognition Stream", value: "fr" },
+  { label: "Personal Protective Equipment Detection Stream", value: "ppe" },
 ];
 
 export function KPIFilter({ selected, setSelected }: KPIFilterProps) {
   return (
     <div className="space-y-2">
-      <Label className="text-base font-medium text-gray-700">Select KPI</Label>
+      <Label className="text-base font-medium text-gray-700">Select Stream</Label>
       <Select
         onValueChange={(val) => setSelected(val === "null" ? null : val)}
         value={selected ?? "null"}

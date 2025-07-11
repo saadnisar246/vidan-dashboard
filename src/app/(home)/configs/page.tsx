@@ -45,6 +45,24 @@ export default function StreamConfigPage() {
     };
   }, []);
 
+  // useEffect(() => {
+  //   const socket = new WebSocket("ws://192.168.0.188:8765");
+  //   wsRef.current = socket;
+
+  //   socket.onopen = () => {
+  //     console.log("✅ WebSocket connected");
+  //     socket.send("__CONFIG__");
+  //   };
+
+  //   socket.onerror = (e) => console.error("❌ WebSocket error:", e);
+
+  //   return () => {
+  //     console.log("🛑 WebSocket closing...");
+  //     socket.close(); // Make sure this runs before navigating
+  //   };
+  // }, []);
+
+
   const updateFormField = (index: number, field: keyof StreamEntry, value: any) => {
     const updated = [...formList];
     updated[index][field] = value;
