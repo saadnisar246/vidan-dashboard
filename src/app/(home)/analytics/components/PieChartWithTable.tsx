@@ -24,15 +24,33 @@ interface PieChartWithTableProps {
   data: DeskTime[];
 }
 
+function mergeDeskTimes(data: DeskTime[]): DeskTime[] {
+  const mergedMap = new Map<string, DeskTime>();
+
+  data.forEach((item) => {
+    const key = `${item.deskNumber}-${item.workerName}`;
+    const existing = mergedMap.get(key);
+
+    if (existing) {
+      existing.totalDuration += item.totalDuration;
+    } else {
+      mergedMap.set(key, { ...item }); // clone to avoid mutating original
+    }
+  });
+
+  return Array.from(mergedMap.values());
+}
+
 const PieChartWithTable: React.FC<PieChartWithTableProps> = ({ data }) => {
+  const mergedData = mergeDeskTimes(data);
   // Prepare the pie chart data
   const pieData = {
-    labels: data.map((item) => `Desk ${item.deskNumber} ${item.workerName}`),
+    labels: mergedData.map((item) => `Desk ${item.deskNumber} ${item.workerName}`),
     datasets: [
       {
         label: "Sitting Time",
-        data: data.map((item) => item.totalDuration),
-        backgroundColor: data.map((_, idx) => {
+        data: mergedData.map((item) => item.totalDuration),
+        backgroundColor: mergedData.map((_, idx) => {
           const colors = [
             "#3B82F6",
             "#10B981",
@@ -51,6 +69,7 @@ const PieChartWithTable: React.FC<PieChartWithTableProps> = ({ data }) => {
       },
     ],
   };
+
 
   return (
     <div className="p-4 bg-white shadow rounded space-y-6">
@@ -79,7 +98,7 @@ const PieChartWithTable: React.FC<PieChartWithTableProps> = ({ data }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((item, idx) => (
+              {mergedData.map((item, idx) => (
                 <TableRow key={idx}>
                   <TableCell>Desk {item.deskNumber}</TableCell>
                   <TableCell>{item.workerName}</TableCell>

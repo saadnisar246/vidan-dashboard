@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { MultiSelectDropdown } from './components/MultiSelectDropdown';
 import { useRouter } from "next/navigation";
+import { useWebSocketStore } from "@/store/websocketStore";
 
 interface StreamEntry {
   rtsp: string;
@@ -30,21 +31,6 @@ export default function StreamConfigPage() {
   const [finalJson, setFinalJson] = useState('');
   const wsRef = useRef<WebSocket | null>(null);
 
-  // --- WebSocket Setup ---
-  useEffect(() => {
-    wsRef.current = new WebSocket("ws://192.168.0.188:8765");
-    wsRef.current.onopen = () => {
-      console.log("✅ WebSocket connected");
-      wsRef.current?.send("__CONFIG__");
-    };
-    wsRef.current.onerror = (e) => console.error("❌ WebSocket error:", e);
-    wsRef.current.onmessage = (e) => console.log("📨 Server:", e.data);
-
-    return () => {
-      wsRef.current?.close();
-    };
-  }, []);
-
   // useEffect(() => {
   //   const socket = new WebSocket("ws://192.168.0.188:8765");
   //   wsRef.current = socket;
@@ -61,6 +47,12 @@ export default function StreamConfigPage() {
   //     socket.close(); // Make sure this runs before navigating
   //   };
   // }, []);
+  const socket = useWebSocketStore((state) => state.socket);
+  const connect = useWebSocketStore((state) => state.connect);
+
+  useEffect(() => {
+    if (!socket) connect();
+  }, []);
 
 
   const updateFormField = (index: number, field: keyof StreamEntry, value: any) => {
@@ -82,15 +74,20 @@ export default function StreamConfigPage() {
       detection_classes: stream.kpi,
     };
 
-    const send = () => {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify(payload));
-      } else {
-        setTimeout(send, 200);
-      }
-    };
+    // const send = () => {
+    //   if (wsRef.current?.readyState === WebSocket.OPEN) {
+    //     wsRef.current.send(JSON.stringify(payload));
+    //   } else {
+    //     setTimeout(send, 200);
+    //   }
+    // };
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(payload));
+    } else {
+      setTimeout(() => sendStreamToServer(index, stream), 200);
+    }
 
-    send();
+    // send();
   };
 
   const handleSubmitStreams = () => {
@@ -118,7 +115,7 @@ export default function StreamConfigPage() {
 
       <div className="max-w-3xl mx-auto space-y-6">
         {formList.map((stream, idx) => (
-          <Card key={idx} className="p-4 space-y-4">
+          <Card key={idx} className="p-4 space-y-0">
             <Label>RTSP URL:</Label>
             <Input
               placeholder="e.g. rtsp://localhost:8554/stream"

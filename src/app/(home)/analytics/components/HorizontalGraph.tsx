@@ -25,10 +25,60 @@ const LABEL_COL_WIDTH = `${LABEL_COL_WIDTH_REM}rem`;
 const HOUR_CELL_WIDTH = `${HOUR_CELL_WIDTH_REM}rem`;
 const TICK_HEIGHT_PX = 6;
 
+function mergeTimeSlots(slots: TimeSlot[]): TimeSlot[] {
+  if (!slots.length) return [];
+
+  // Sort by start time
+  const sorted = [...slots].sort((a, b) => a.start - b.start);
+  const merged: TimeSlot[] = [sorted[0]];
+
+  for (let i = 1; i < sorted.length; i++) {
+    const last = merged[merged.length - 1];
+    const current = sorted[i];
+
+    // If overlapping or adjacent (e.g., end == start), merge them
+    if (current.start <= last.end) {
+      last.end = Math.max(last.end, current.end); // extend the end
+    } else {
+      merged.push(current);
+    }
+  }
+
+  return merged;
+}
+function mergeDeskData(data: DeskData[]): DeskData[] {
+  const grouped = new Map<string, DeskData>();
+
+  data.forEach((entry) => {
+    const key = `${entry.deskNumber}-${entry.workerName}`;
+    const existing = grouped.get(key);
+
+    if (existing) {
+      existing.times.push(...entry.times);
+    } else {
+      grouped.set(key, {
+        deskNumber: entry.deskNumber,
+        workerName: entry.workerName,
+        times: [...entry.times],
+      });
+    }
+  });
+
+  // Merge overlapping times for each entry
+  const merged = Array.from(grouped.values()).map((d) => ({
+    ...d,
+    times: mergeTimeSlots(d.times),
+  }));
+
+  return merged;
+}
+
 const HorizontalGraph: React.FC<HorizontalGraphProps> = ({
   data,
   timeRange,
 }) => {
+  const mergedData = mergeDeskData(data); // ✅ use this instead of raw data
+
   const totalHours = timeRange.end - timeRange.start;
   const hourLabels = Array.from(
     { length: totalHours },
@@ -83,12 +133,10 @@ const HorizontalGraph: React.FC<HorizontalGraphProps> = ({
       </div>
 
       {/* DESK ROWS */}
-      {data.map((desk) => {
-        const sorted = [...desk.times].sort((a, b) => a.start - b.start);
-
+      {mergedData.map((desk) => {
         return (
           <div
-            key={desk.deskNumber}
+            key={`${desk.deskNumber}-${desk.workerName}`}
             className="mb-2"
             style={{
               display: "grid",
@@ -101,7 +149,6 @@ const HorizontalGraph: React.FC<HorizontalGraphProps> = ({
               Desk {desk.deskNumber}
             </div>
 
-            {/* timeline row container */}
             <div className="relative h-8 bg-gray-100" style={{ minWidth: minGridWidth }}>
               {hourLabels.map((_, i) => (
                 <div
@@ -114,7 +161,7 @@ const HorizontalGraph: React.FC<HorizontalGraphProps> = ({
                 />
               ))}
 
-              {sorted.map((slot, idx) => {
+              {desk.times.map((slot, idx) => {
                 const slotStart = ((slot.start - timeRange.start) / totalHours) * 100;
                 const slotEnd = ((slot.end - timeRange.start) / totalHours) * 100;
                 const width = slotEnd - slotStart;

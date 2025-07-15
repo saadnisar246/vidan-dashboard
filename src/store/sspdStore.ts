@@ -12,8 +12,9 @@ export const useSSPDStore = create<SSPDState>((set) => ({
   setPairs: (pairs) => set({ pairs }),
 
   addOrUpdatePair: (newPair) =>
-  set((state) => {
-    const updated = [...state.pairs];
+    set((state) => {
+      console.log(newPair);
+      const updated = [...state.pairs];
 
     if (newPair.login) {
       // Find latest unmatched login for this zone
@@ -48,6 +49,40 @@ export const useSSPDStore = create<SSPDState>((set) => ({
       }
     }
 
+    // ✅ NEW: handle person updates in existing login session
+    if (newPair.person) {
+      const openIndex = [...updated].reverse().findIndex(
+        (p) =>
+          p.zone_id === newPair.zone_id &&
+          p.login &&
+          !p.logout &&
+          !p.login.detections?.[0]?.person // Only update if person not already assigned
+      );
+      const actualIndex = openIndex !== -1 ? updated.length - 1 - openIndex : -1;
+
+      if (actualIndex !== -1) {
+        const existingLogin = updated[actualIndex].login;
+        if (existingLogin) {
+          // ✅ Extract name from person.detections[0]
+          const personName = (newPair.person as FramePayload)?.detections?.[0]?.person;
+
+          const updatedLogin: FramePayload = {
+            ...existingLogin,
+            detections: existingLogin.detections?.map((det, idx) =>
+              idx === 0 ? { ...det, person: personName } : det
+            ) || [],
+          };
+          updated[actualIndex] = {
+            ...updated[actualIndex],
+            login: updatedLogin,
+          };
+          
+        }
+      }
+
+    }
+
     return { pairs: updated };
   }),
+
 }));

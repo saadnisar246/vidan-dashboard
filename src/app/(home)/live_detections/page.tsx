@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { KPIFilter } from "./components/KPIFilter";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import {
   Pagination,
   PaginationContent,
@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
 import { useSSPDStore } from "@/store/sspdStore";
+import { useWebSocketStore } from "@/store/websocketStore";
 import { LPRDetection, VehicleDetection, PPEDetection, SSPDetection, FramePayload, PersonDetection } from "@/lib/types";
 
 function renderDetections(task: string, detections: any[]) {
@@ -112,28 +113,69 @@ export default function Livestream() {
 
   const makeSSPDKey = (pair: any) => `${pair.zone_id}-${pair.login?.timestamp || ""}-${pair.logout?.timestamp || ""}`;
 
+  // useEffect(() => {
+  //   const socket = new WebSocket('ws://192.168.0.188:8765');
+  //   socket.onmessage = (event) => {
+  //     try {
+  //       if (event.data === "__REPLAY_DONE__") {
+  //         setLoading(false); // done loading historical data
+  //         return;
+  //       }
+  //       const data: FramePayload = JSON.parse(event.data);
+  //       setLoading(false);
+  //       console.log("Received frame:", data);
+  //       if (data.task === "sspd") {
+  //         const det = data.detections[0] as SSPDetection;
+  //         addOrUpdatePair({
+  //           zone_id: det.zone_id,
+  //           [det.status.toLowerCase()]: data,
+  //         } as any);
+  //       } else {
+  //         setFrames(prev => [data, ...prev]);
+  //       }
+  //     } catch (err) {
+  //       console.error("Failed to parse websocket frame", err);
+  //     }
+  //   };
+  //   return () => socket.close();
+  // }, []);
+
+  const socket = useWebSocketStore((state) => state.socket);
+  const connect = useWebSocketStore((state) => state.connect);
+
   useEffect(() => {
-    const socket = new WebSocket('ws://192.168.0.188:8765');
+    if (!socket) connect();
+  }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
     socket.onmessage = (event) => {
       try {
+        console.log("WebSocket message received:", event.data);
+        if (event.data === '__REPLAY_DONE__') {
+          setLoading(false);
+          return;
+        }
         const data: FramePayload = JSON.parse(event.data);
         setLoading(false);
         console.log("Received frame:", data);
-        if (data.task === "sspd") {
+
+        if (data.task === 'sspd') {
           const det = data.detections[0] as SSPDetection;
           addOrUpdatePair({
             zone_id: det.zone_id,
             [det.status.toLowerCase()]: data,
           } as any);
         } else {
-          setFrames(prev => [data, ...prev]);
+          setFrames((prev) => [data, ...prev]);
         }
       } catch (err) {
-        console.error("Failed to parse websocket frame", err);
+        console.error('Failed to parse frame:', err);
       }
     };
-    return () => socket.close();
-  }, []);
+  }, [socket]);
+
 
   // Prepare draft when dialog opens
   useEffect(() => {
@@ -382,7 +424,7 @@ export default function Livestream() {
         </>
       )}
 
-      <Dialog open={modalKey !== null} onOpenChange={() => setModalKey(null)}>
+      {/* <Dialog open={modalKey !== null} onOpenChange={() => setModalKey(null)}>
         <DialogContent className="max-w-4xl w-full p-6">
           <DialogTitle>SSPD Frame Viewer</DialogTitle>
           <DialogDescription>Slide between Login and Logout frames for selected Zone.</DialogDescription>
@@ -407,6 +449,53 @@ export default function Livestream() {
             </Carousel>
           )}
         </DialogContent>
+      </Dialog> */}
+      <Dialog open={modalKey !== null} onOpenChange={() => setModalKey(null)}>
+        <DialogContent className="max-w-4xl w-full p-6">
+          <DialogTitle>SSPD Frame Viewer</DialogTitle>
+          <DialogDescription>
+            Slide between Login and Logout frames for selected Zone.
+          </DialogDescription>
+
+          {!currentSSPD ? (
+            <Skeleton className="w-full h-80" />
+          ) : (
+            <div className="relative">
+              <Carousel>
+                <CarouselContent>
+                  {currentSSPD.login && (
+                    <CarouselItem>
+                      <img
+                        src={`data:image/jpeg;base64,${currentSSPD.login.frame}`}
+                        alt="Login Frame"
+                        className="w-full h-80 object-cover"
+                      />
+                      <p className="text-center mt-2 font-medium">
+                        Login - {currentSSPD.login.timestamp}
+                      </p>
+                    </CarouselItem>
+                  )}
+                  {currentSSPD.logout && (
+                    <CarouselItem>
+                      <img
+                        src={`data:image/jpeg;base64,${currentSSPD.logout.frame}`}
+                        alt="Logout Frame"
+                        className="w-full h-80 object-cover"
+                      />
+                      <p className="text-center mt-2 font-medium">
+                        Logout - {currentSSPD.logout.timestamp}
+                      </p>
+                    </CarouselItem>
+                  )}
+                </CarouselContent>
+
+                {/* Add Previous and Next buttons */}
+                <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2 z-10" />
+                <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2 z-10" />
+              </Carousel>
+            </div>
+          )}
+        </DialogContent>
       </Dialog>
 
       <Dialog open={modalFrame !== null} onOpenChange={() => setModalFrame(null)}>
@@ -428,3 +517,4 @@ export default function Livestream() {
     </div>
   );
 }
+
