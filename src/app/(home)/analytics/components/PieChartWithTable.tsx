@@ -101,7 +101,7 @@ const PieChartWithTable: React.FC<PieChartWithTableProps> = ({ data }) => {
               {mergedData.map((item, idx) => (
                 <TableRow key={idx}>
                   <TableCell>Desk {item.deskNumber}</TableCell>
-                  <TableCell>{item.workerName}</TableCell>
+                  <TableCell>{item.workerName.charAt(0).toUpperCase() + item.workerName.slice(1)}</TableCell>
                   <TableCell>{item.totalDuration} hrs</TableCell>
                 </TableRow>
               ))}

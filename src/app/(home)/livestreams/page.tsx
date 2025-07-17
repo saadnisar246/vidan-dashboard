@@ -123,10 +123,19 @@ import { KPIFilter } from "./components/KPIFilter";
 // const STREAM_NAMES = ['lpr']; // Add more stream names here if needed
 const MEDIAMTX_HOST = '192.168.0.188:8889';
 
+const options = [
+  { label: "Siddiq Sons Camera 1", value: "sspd" },
+  // { label: "License Plate Recognition Stream", value: "lpr" },
+  // { label: "Face Detection Stream", value: "fd" },
+  // { label: "Vehicle Detection Stream", value: "vehicledetector" },
+  // { label: "Face Recognition Stream", value: "fr" },
+  // { label: "Personal Protective Equipment Detection Stream", value: "ppe" },
+];
+
 export default function LiveVideosPage() {
   const [loading, setLoading] = useState(true);
   const [timedOut, setTimedOut] = useState(false);
-  const [stream, setSelectedStream] = useState<string | null>('sspd');
+  const [stream, setSelectedStream] = useState<{ label: string; value: string } | null>({ label: "Siddiq Sons Camera 1", value: "sspd" });
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -153,27 +162,27 @@ export default function LiveVideosPage() {
       <div className="flex items-start mb-4">
         <KPIFilter selected={stream} setSelected={setSelectedStream} />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+      <div className="flex items-center justify-center max-w-2xl mx-auto">
         {loading ? (
           <div className="p-4 space-y-4 bg-white shadow rounded">
-            <Skeleton className="h-72 w-full" />
+            <Skeleton className="h-80 w-full" />
             <Skeleton className="h-4 w-1/2" />
           </div>
         ) : stream ? (
           // STREAM_NAMES.map((name) => (
             <div
               // key={name}
-              className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200"
+              className="flex-1 bg-white shadow-md rounded-lg overflow-hidden border border-gray-200"
             >
               <iframe
-                src={`http://${MEDIAMTX_HOST}/${stream}`}
-                title={`Stream ${stream}`}
+                src={`http://${MEDIAMTX_HOST}/${stream.value}`}
+                title={`Stream ${stream.value}`}
                 // allow="autoplay; fullscreen"
-                className="w-full h-72 bg-black object-cover"
+                className="w-full h-80 bg-black object-cover"
               ></iframe>
               <div className="p-2">
                 <h3 className="text-md font-semibold text-gray-700 truncate">
-                  {stream}
+                  {stream.label}
                 </h3>
               </div>
             </div>

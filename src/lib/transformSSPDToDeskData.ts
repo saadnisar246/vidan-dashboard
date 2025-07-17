@@ -7,9 +7,12 @@ export function transformSSPDToDeskData(sspdPairs: SSPDPair[]): DeskData[] {
   return sspdPairs.map((pair) => {
     const times: TimeSlot[] = [];
 
+    let workerName = "-";
+
     if (pair.login) {
       const loginDate = new Date(pair.login.timestamp);
       const logoutDate = pair.logout ? new Date(pair.logout.timestamp) : now;
+      workerName = pair.login.detections?.[0]?.person;
 
       const start =
         loginDate.getHours() + loginDate.getMinutes() / 60 + loginDate.getSeconds() / 3600;
@@ -23,7 +26,7 @@ export function transformSSPDToDeskData(sspdPairs: SSPDPair[]): DeskData[] {
 
     return {
       deskNumber: pair.zone_id,
-      workerName: `Zone ${pair.zone_id} Person`,
+      workerName: workerName,
       times,
     };
   });

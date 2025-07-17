@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { FramePayload, SSPDPair } from "@/lib/types";
 
 interface SSPDState {
@@ -13,42 +14,84 @@ export const useSSPDStore = create<SSPDState>((set) => ({
 
   addOrUpdatePair: (newPair) =>
     set((state) => {
-      console.log(newPair);
+      // console.log(newPair);
       const updated = [...state.pairs];
 
+    // if (newPair.login) {
+    //   // Find latest unmatched login for this zone
+    //   const openIndex = [...updated].reverse().findIndex(
+    //     (p) => p.zone_id === newPair.zone_id && p.login && !p.logout
+    //   );
+    //   const actualIndex = openIndex !== -1 ? updated.length - 1 - openIndex : -1;
+
+    //   if (actualIndex === -1) {
+    //     // ✅ No open login — create new session (add to top)
+    //     updated.unshift({ zone_id: newPair.zone_id, login: newPair.login });
+    //   }
+    //   // Else: already open login exists — ignore new login
+    // }
+
+    // if (newPair.logout) {
+    //   // Match to latest unmatched login
+    //   const openIndex = [...updated].reverse().findIndex(
+    //     (p) => p.zone_id === newPair.zone_id && p.login && !p.logout
+    //   );
+    //   const actualIndex = openIndex !== -1 ? updated.length - 1 - openIndex : -1;
+
+    //   if (actualIndex !== -1) {
+    //     // ✅ Fill logout in existing session
+    //     updated[actualIndex] = {
+    //       ...updated[actualIndex],
+    //       logout: newPair.logout,
+    //     };
+    //   } else {
+    //     // ❗Orphan logout — add to top as standalone
+    //     updated.unshift({ zone_id: newPair.zone_id, logout: newPair.logout });
+    //   }
+    // }
+
+    // ✴️ Deduplicate logic — check if login already exists
     if (newPair.login) {
-      // Find latest unmatched login for this zone
-      const openIndex = [...updated].reverse().findIndex(
-        (p) => p.zone_id === newPair.zone_id && p.login && !p.logout
+      const isAlreadyAdded = updated.some(
+        (p) =>
+          p.zone_id === newPair.zone_id &&
+          p.login?.timestamp === newPair.login?.timestamp
       );
-      const actualIndex = openIndex !== -1 ? updated.length - 1 - openIndex : -1;
+      if (!isAlreadyAdded) {
+        const openIndex = [...updated].reverse().findIndex(
+          (p) => p.zone_id === newPair.zone_id && p.login && !p.logout
+        );
+        const actualIndex = openIndex !== -1 ? updated.length - 1 - openIndex : -1;
 
-      if (actualIndex === -1) {
-        // ✅ No open login — create new session (add to top)
-        updated.unshift({ zone_id: newPair.zone_id, login: newPair.login });
+        if (actualIndex === -1) {
+          updated.unshift({ zone_id: newPair.zone_id, login: newPair.login });
+        }
       }
-      // Else: already open login exists — ignore new login
     }
 
+    // ✴️ Deduplicate logic — check if logout already exists
     if (newPair.logout) {
-      // Match to latest unmatched login
-      const openIndex = [...updated].reverse().findIndex(
-        (p) => p.zone_id === newPair.zone_id && p.login && !p.logout
+      const isAlreadyAdded = updated.some(
+        (p) =>
+          p.zone_id === newPair.zone_id &&
+          p.logout?.timestamp === newPair.logout?.timestamp
       );
-      const actualIndex = openIndex !== -1 ? updated.length - 1 - openIndex : -1;
+      if (!isAlreadyAdded) {
+        const openIndex = [...updated].reverse().findIndex(
+          (p) => p.zone_id === newPair.zone_id && p.login && !p.logout
+        );
+        const actualIndex = openIndex !== -1 ? updated.length - 1 - openIndex : -1;
 
-      if (actualIndex !== -1) {
-        // ✅ Fill logout in existing session
-        updated[actualIndex] = {
-          ...updated[actualIndex],
-          logout: newPair.logout,
-        };
-      } else {
-        // ❗Orphan logout — add to top as standalone
-        updated.unshift({ zone_id: newPair.zone_id, logout: newPair.logout });
+        if (actualIndex !== -1) {
+          updated[actualIndex] = {
+            ...updated[actualIndex],
+            logout: newPair.logout,
+          };
+        } else {
+          updated.unshift({ zone_id: newPair.zone_id, logout: newPair.logout });
+        }
       }
     }
-
     // ✅ NEW: handle person updates in existing login session
     if (newPair.person) {
       const openIndex = [...updated].reverse().findIndex(
@@ -83,6 +126,6 @@ export const useSSPDStore = create<SSPDState>((set) => ({
     }
 
     return { pairs: updated };
-  }),
+  })
 
 }));

@@ -22,7 +22,9 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
 import { useSSPDStore } from "@/store/sspdStore";
+import { useFrameStore } from "@/store/frameStore";
 import { useWebSocketStore } from "@/store/websocketStore";
+import { useStreamStore } from "@/store/streamStore";
 import { LPRDetection, VehicleDetection, PPEDetection, SSPDetection, FramePayload, PersonDetection } from "@/lib/types";
 
 function renderDetections(task: string, detections: any[]) {
@@ -61,11 +63,11 @@ function renderDetections(task: string, detections: any[]) {
       );
     case "sspd":
       return detections.map((det: any, idx) => (
-        <div key={idx} className="mb-2">
-          <p className="text-sm text-gray-600">Zone ID: {det.zone_id}</p>
-          <p className="text-sm text-gray-600">Login: {det.login ?? "—"}</p>
-          <p className="text-sm text-gray-600">Logout: {det.logout ?? "—"}</p>
-          <p className="text-sm text-gray-600 capitalize">Person: {det.person ?? "—"}</p>
+        <div key={idx} className="mb-2 space-y-2">
+          <p className="text-sm text-gray-600"><span className="font-semibold">Zone ID:</span> {det.zone_id}</p>
+          <p className="text-sm text-gray-600"><span className="font-semibold">Login:</span> {det.login ?? "—"}</p>
+          <p className="text-sm text-gray-600"><span className="font-semibold">Logout:</span> {det.logout ?? "—"}</p>
+          <p className="text-sm text-gray-600 capitalize"><span className="font-semibold">Person:</span> {det.person ?? "—"}</p>
         </div>
       ));
     case "persondetector":
@@ -98,9 +100,11 @@ export default function Livestream() {
 
   const [showCalendar, setShowCalendar] = useState(false);
 
-  const [frames, setFrames] = useState<FramePayload[]>([]);
+  // const [frames, setFrames] = useState<FramePayload[]>([]);
   const sspdPairs = useSSPDStore((state) => state.pairs);
   const addOrUpdatePair = useSSPDStore((state) => state.addOrUpdatePair);
+  const frames = useFrameStore((state) => state.frames);
+  const addFrame = useFrameStore((state) => state.addFrame);
   // const [modalIndex, setModalIndex] = useState<number | null>(null);
   const [modalKey, setModalKey] = useState<string | null>(null);
 
@@ -140,26 +144,58 @@ export default function Livestream() {
   //   return () => socket.close();
   // }, []);
 
+  const streams = useStreamStore((state) => state.streams); // get active streams
+  // console.log("Active streams:", streams);
+
+  useEffect(() => {
+    async function loadInitialData() {
+      console.log("Loading old data for SSPD...");
+      for (const stream of streams) {
+        if (!stream.kpi.includes("sspd")) continue; // only fetch if SSPD is selected
+
+        const res = await fetch(
+          `http://192.168.0.188:5000/api/sspd_summary?rtsp=${encodeURIComponent(stream.rtsp)}`
+        );
+        const summary = await res.json();
+        // console.log(`SSPD summary for ${stream.rtsp}`, summary);
+
+        for (const [zoneId, pairs] of Object.entries(summary)) {
+          for (const [login, logout] of pairs as [any, any][]) {
+            if (login) addOrUpdatePair({ zone_id: zoneId, login } as any);
+            if (logout) addOrUpdatePair({ zone_id: zoneId, logout } as any);
+          }
+        }
+        // if no data was loaded, set loading to false
+        if (Object.keys(summary).length === 0) {
+          setLoading(true);
+        } else {
+          setLoading(false); // done loading initial data
+        }
+      }
+    }
+
+    if (streams.length > 0) loadInitialData();
+  }, [streams, addOrUpdatePair]);
+
+  // useEffect(() => {
+  //   console.log("sspdPairs updated", sspdPairs);
+  // }, [sspdPairs]);
+
   const socket = useWebSocketStore((state) => state.socket);
   const connect = useWebSocketStore((state) => state.connect);
 
   useEffect(() => {
-    if (!socket) connect();
-  }, []);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    socket.onmessage = (event) => {
+    connect((event) => {
       try {
-        console.log("WebSocket message received:", event.data);
-        if (event.data === '__REPLAY_DONE__') {
-          setLoading(false);
-          return;
-        }
+        console.log("Fetching new data from WebSocket...");
+        // if (event.data === '__REPLAY_DONE__') {
+        //   setLoading(false);
+        //   return;
+        // }
+
         const data: FramePayload = JSON.parse(event.data);
         setLoading(false);
-        console.log("Received frame:", data);
+        console.log("WebSocket message received:", data);
 
         if (data.task === 'sspd') {
           const det = data.detections[0] as SSPDetection;
@@ -168,14 +204,14 @@ export default function Livestream() {
             [det.status.toLowerCase()]: data,
           } as any);
         } else {
-          setFrames((prev) => [data, ...prev]);
+          // setFrames((prev) => [data, ...prev]);
+          addFrame(data);
         }
       } catch (err) {
         console.error('Failed to parse frame:', err);
       }
-    };
-  }, [socket]);
-
+    });
+  }, [connect, addOrUpdatePair]);
 
   // Prepare draft when dialog opens
   useEffect(() => {
@@ -194,6 +230,7 @@ export default function Livestream() {
     return true;
   })
   , [sspdPairs, appliedActivity]);
+  // console.log("filteredPairs", filteredPairs);
 
   const allFrames = useMemo(() => {
     const list = [...frames];
@@ -211,9 +248,11 @@ export default function Livestream() {
         synthetic: true,
         detections: [{ zone_id: pair.zone_id, login: pair.login?.timestamp, logout: pair.logout?.timestamp, person: person ?? "-" }]
       } as FramePayload);
+      // console.log("Latest frame being added:", latest);
     });
     return list;
   }, [frames, filteredPairs]);
+
 
   const filteredFrames = useMemo(() => allFrames.filter(f => {
     const byKPI = !appliedKPI || appliedKPI === 'all' || f.task === appliedKPI;
@@ -221,12 +260,14 @@ export default function Livestream() {
     const byZone = !appliedZone || (f.task === 'sspd' && f.detections[0]?.zone_id === appliedZone);
     return byKPI && byDate && byZone;
   }), [allFrames, appliedKPI, appliedDate, appliedZone]);
+  // console.log("filteredFrames", filteredFrames);
 
   const totalPages = Math.ceil(filteredFrames.length / itemsPerPage);
   const paginatedFrames = filteredFrames.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+  // console.log("paginatedFrames", paginatedFrames);
 
   // const currentSSPD = modalIndex !== null ? sspdPairs[modalIndex] : null;
   const currentSSPD = useMemo(() => {
@@ -403,12 +444,12 @@ export default function Livestream() {
                   setModalFrame(frame);
                 }
               }}>
-                <img src={`data:image/jpeg;base64,${frame.frame}`} alt={`Frame from ${frame.stream}`} className="w-full h-72 object-cover" />
+                <img src={`data:image/jpeg;base64,${frame.frame}`} alt={`Frame from ${frame.stream}`} className="w-full h-72 object-cover p-4" />
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-gray-700 truncate">{frame.stream}</h3>
-                  <h3 className="text-sm font-semibold text-gray-600 truncate">{frame.timestamp}</h3>
+                  {/* <h3 className="text-sm font-semibold text-gray-600 truncate">{frame.timestamp}</h3> */}
                   <div className="mt-2">
-                    <p className="text-base text-gray-600"><span className="font-semibold">Task:</span> {frame.task.toUpperCase()}</p>
+                    {/* <p className="text-base text-gray-600"><span className="font-semibold">Task:</span> {frame.task.toUpperCase()}</p> */}
                     {frame.detections.length > 0 ? renderDetections(frame.task, frame.detections) : <p className="text-sm text-gray-500">No detections</p>}
                   </div>
                 </div>

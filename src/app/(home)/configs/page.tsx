@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { MultiSelectDropdown } from './components/MultiSelectDropdown';
 import { useRouter } from "next/navigation";
 import { useWebSocketStore } from "@/store/websocketStore";
+import { useStreamStore } from "@/store/streamStore";
 
 interface StreamEntry {
   rtsp: string;
@@ -16,14 +17,16 @@ interface StreamEntry {
 }
 
 const KPI_OPTIONS = [
-  { value: "lpr", label: "License Plate Recognition (LPR)" },
-  { value: "ppe", label: "PPE Detection" },
-  { value: "sspd", label: "SSPD" },
-  { value: "person", label: "Person Detection" },
+  // { value: "lpr", label: "License Plate Recognition (LPR)" },
+  // { value: "ppe", label: "PPE Detection" },
+  { value: "sspd", label: "Siddiq Sons Person Detection" },
+  // { value: "person", label: "Person Detection" },
 ];
 
 export default function StreamConfigPage() {
   const router = useRouter();
+  
+  const setStreams = useStreamStore((state) => state.setStreams);
   
   const [formList, setFormList] = useState<StreamEntry[]>([
     { rtsp: '', kpi: [] }
@@ -51,7 +54,7 @@ export default function StreamConfigPage() {
   const connect = useWebSocketStore((state) => state.connect);
 
   useEffect(() => {
-    if (!socket) connect();
+    if (!socket) connect(() => {}); // ✅ No-op handler
   }, []);
 
 
@@ -97,6 +100,7 @@ export default function StreamConfigPage() {
       rtsp_url: stream.rtsp,
       detection_classes: stream.kpi
     }));
+    setStreams(validStreams);
 
     setFinalJson(JSON.stringify(configJson, null, 2));
 
