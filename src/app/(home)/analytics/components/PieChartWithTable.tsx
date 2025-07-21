@@ -102,7 +102,7 @@ const PieChartWithTable: React.FC<PieChartWithTableProps> = ({ data }) => {
                 <TableRow key={idx}>
                   <TableCell>Desk {item.deskNumber}</TableCell>
                   <TableCell>{item.workerName.charAt(0).toUpperCase() + item.workerName.slice(1)}</TableCell>
-                  <TableCell>{item.totalDuration} hrs</TableCell>
+                  <TableCell>{(item.totalDuration).toFixed(2)} min</TableCell>
                 </TableRow>
               ))}
             </TableBody>

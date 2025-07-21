@@ -51,11 +51,11 @@ export default function StreamConfigPage() {
   //   };
   // }, []);
   const socket = useWebSocketStore((state) => state.socket);
-  const connect = useWebSocketStore((state) => state.connect);
+  // const connect = useWebSocketStore((state) => state.connect);
 
-  useEffect(() => {
-    if (!socket) connect(() => {}); // ✅ No-op handler
-  }, []);
+  // useEffect(() => {
+  //   if (!socket) connect(() => {}); // ✅ No-op handler
+  // }, []);
 
 
   const updateFormField = (index: number, field: keyof StreamEntry, value: any) => {

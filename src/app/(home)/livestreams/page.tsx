@@ -121,7 +121,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { KPIFilter } from "./components/KPIFilter";
 
 // const STREAM_NAMES = ['lpr']; // Add more stream names here if needed
-const MEDIAMTX_HOST = '192.168.0.188:8889';
+const MEDIAMTX_HOST = '192.168.0.197:8889';
 
 const options = [
   { label: "Siddiq Sons Camera 1", value: "sspd" },
@@ -164,9 +164,9 @@ export default function LiveVideosPage() {
       </div>
       <div className="flex items-center justify-center max-w-2xl mx-auto">
         {loading ? (
-          <div className="p-4 space-y-4 bg-white shadow rounded">
+          <div className="flex-1 p-4 space-y-4 bg-white shadow rounded">
             <Skeleton className="h-80 w-full" />
-            <Skeleton className="h-4 w-1/2" />
+            {/* <Skeleton className="h-4 w-1/2" /> */}
           </div>
         ) : stream ? (
           // STREAM_NAMES.map((name) => (

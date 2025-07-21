@@ -10,7 +10,7 @@ export default function AuthLayout(props: { children: React.ReactNode }) {
   return (
     <>
       <div className="relative grid min-h-screen grid-cols-1 overflow-hidden md:grid-cols-3 lg:grid-cols-2">
-        <div className="relative">
+        <div className="invisible lg:visible relative">
           <div
             className="absolute inset-0 bg-cover"
             style={{

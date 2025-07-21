@@ -148,13 +148,18 @@ export default function Livestream() {
   // console.log("Active streams:", streams);
 
   useEffect(() => {
+    console.log("Checking for existing SSPD pairs in memory...", sspdPairs.length);
+    if (sspdPairs.length > 0) {
+      setLoading(false); // Already have data in memory
+      return;
+    }
     async function loadInitialData() {
       console.log("Loading old data for SSPD...");
       for (const stream of streams) {
         if (!stream.kpi.includes("sspd")) continue; // only fetch if SSPD is selected
 
         const res = await fetch(
-          `http://192.168.0.188:5000/api/sspd_summary?rtsp=${encodeURIComponent(stream.rtsp)}`
+          `http://192.168.0.197:5000/api/sspd_summary?rtsp=${encodeURIComponent(stream.rtsp)}`
         );
         const summary = await res.json();
         // console.log(`SSPD summary for ${stream.rtsp}`, summary);
